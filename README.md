@@ -1,6 +1,27 @@
 # pandaral·lel
 An easy to use library to speed up computation (by parallelizing on multi CPUs) with [pandas](https://pandas.pydata.org/).
 
+<table>
+<tr>
+  <td>Latest Release</td>
+  <td>
+    <a href="https://pypi.org/project/pandarallel/">
+    <img src="https://img.shields.io/pypi/v/pandarallel.svg" alt="latest release" />
+    </a>
+  </td>
+</tr>
+<tr>
+  <td>License</td>
+  <td>
+    <a href="https://github.com/nalepae/pandarallel/blob/master/LICENSE">
+    <img src="https://img.shields.io/pypi/l/pandarallel.svg" alt="license" />
+    </a>
+  </td>
+</tr>
+</table>
+
+
+
 ## Requirements
  - [pandas](https://pypi.org/project/pandas/)
  - [pyarrow](https://pypi.org/project/pyarrow/)
