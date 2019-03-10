@@ -20,6 +20,8 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
 </tr>
 </table>
 
+## Installation
+`$ pip install pandarallel [--user]`
 
 
 ## Requirements
@@ -65,37 +67,14 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
  ## API
  First, you have to import `pandarallel` (don't forget the double _l_):
  ```python
- import pandarallel
- ```
- ### DataFrame.parallel_apply
- 
- If `df` is a pandas DataFrame, and `func` a function to apply to this DataFrame, replace
- ```python
- df.apply(func, axis=1)
- ```
- by
- ```python
- df.parallel_apply(func, axis=1)
+ from pandarallel import pandarallel
  ```
  
-  _Note: ``apply`` with ``axis=0`` is not yet implemented._
+ | Without parallelisation           | With parallelisation                       |
+ | --------------------------------- | -----------------------------------------  |
+ | `df.apply(func, axis=1)`          | `df.parallel_apply(func, axis=1)`          |
+ | `series.map(func)`                | `series.parallel_apply(func)`              |
+ | `df.groupby(colname).apply(func)` | `df.groupby(colname).parallel_apply(func)` |
+
+  _Note: ``apply`` on DataFrane with ``axis=0`` is not yet implemented._
  
- ### Series.parallel_map
- If `series` is a pandas Series (aka a DataFrame column), and `func` a function to apply to this Series, replace
- ```python
- series.map(func)
- ```
- by
- ```python
- series.parallel_map(func)
- ```
- 
- ### DataFrame.groupby.parallel_apply
- If `df` is a pandas DataFrame, `col_name` is the name of a column of this DataFrame and `func` a function to apply to this column, replace
- ```python
- df.groupby(col_name).apply(func)
- ```
- by
- ```python
- df.groupby(col_name).parallel_apply(func)
- ```
