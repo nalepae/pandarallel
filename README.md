@@ -50,10 +50,10 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
  ```
  
  ## Examples
- An example of each API is available in [examples.ipynb](https://github.com/nalepae/pandarallel/blob/master/examples.ipynb).
+ An example of each API is available [here](https://github.com/nalepae/pandarallel/blob/master/docs/examples.ipynb).
  
  ## Benchmark
- For the `Dataframe.apply` example in [examples.ipynb](https://github.com/nalepae/pandarallel/blob/master/examples.ipynb), here is the comparative benchmark with "standard" `apply` and with `progress_apply` (error bars are too small to be displayed).
+ For the `Dataframe.apply` example [here](https://github.com/nalepae/pandarallel/blob/master/docs/examples.ipynb), here is the comparative benchmark with "standard" `apply` and with `parallel_apply` (error bars are too small to be displayed).
  Computer used for this benchmark:
  - OS: Linux Ubuntu 16.04
  - Hardware: Intel Core i7 @ 3.40 GHz (4 cores)
@@ -65,16 +65,18 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
  
  
  ## API
- First, you have to import `pandarallel` (don't forget the double _l_):
+ First, you have to import `pandarallel`:
  ```python
  from pandarallel import pandarallel
  ```
  
- | Without parallelisation           | With parallelisation                       |
- | --------------------------------- | -----------------------------------------  |
- | `df.apply(func, axis=1)`          | `df.parallel_apply(func, axis=1)`          |
- | `series.map(func)`                | `series.parallel_apply(func)`              |
- | `df.groupby(colname).apply(func)` | `df.groupby(colname).parallel_apply(func)` |
+ With `df` a pandas DataFrame, `series` a pandas Series, `col_name` the name of a pandas Dataframe column & `func` a function to apply/map,
+ 
+ | Without parallelisation            | With parallelisation                        |
+ | ---------------------------------- | ------------------------------------------- |
+ | `df.apply(func, axis=1)`           | `df.parallel_apply(func, axis=1)`           |
+ | `series.map(func)`                 | `series.parallel_apply(func)`               |
+ | `df.groupby(col_name).apply(func)` | `df.groupby(col_name).parallel_apply(func)` |
 
   _Note: ``apply`` on DataFrane with ``axis=0`` is not yet implemented._
  
