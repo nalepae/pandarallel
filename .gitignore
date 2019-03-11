@@ -2,3 +2,6 @@
 .vscode
 __pycache__
 *checkpoints
+build
+dist
+*.egg-info
