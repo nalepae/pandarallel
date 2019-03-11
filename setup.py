@@ -17,4 +17,5 @@ setup(
     long_description=open('README.md').read(),
     url='https://github.com/nalepae/pandarallel',
     install_requires=install_requires,
+    license='BSD',
 )
