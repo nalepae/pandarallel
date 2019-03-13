@@ -35,8 +35,10 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
   - Functions applied should NOT be lambda functions.
 
  ```python
- import pandarallel
+ from pandarallel import pandarallel
  from math import sin
+
+ pandarallel.initialize()
  
  # FORBIDDEN
  df.parallel_apply(lambda x: sin(x**2), axis=1)

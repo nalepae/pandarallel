@@ -1,4 +1,6 @@
-import pandarallel.pandarallel
+import pytest
+
+from pandarallel import pandarallel
 
 import pandas as _pd
 import numpy as np
@@ -17,7 +19,11 @@ def func_for_dataframe_groupby_apply(df):
 
     return dum / len(df.b)
 
-def test_dataframe_apply():
+@pytest.fixture(scope="session")
+def plasma_client():
+    pandarallel.initialize()
+
+def test_dataframe_apply(plasma_client):
     df_size = int(1e1)
     df = _pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
                         b=np.random.rand(df_size)))
@@ -26,7 +32,7 @@ def test_dataframe_apply():
     res_parallel = df.parallel_apply(func_for_dataframe_apply, axis=1)
     assert res.equals(res_parallel)
 
-def test_series_map():
+def test_series_map(plasma_client):
     df_size = int(1e1)
     df = _pd.DataFrame(dict(a=np.random.rand(df_size) + 1))
 
@@ -34,7 +40,7 @@ def test_series_map():
     res_parallel = df.a.parallel_map(func_for_series_map)
     assert res.equals(res_parallel)
 
-def test_dataframe_groupby_apply():
+def test_dataframe_groupby_apply(plasma_client):
     df_size = int(1e1)
     df = _pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
                            b=np.random.rand(df_size)))
