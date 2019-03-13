@@ -72,6 +72,17 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
  from pandarallel import pandarallel
  ```
  
+ Then, you have to initialize it.
+  ```python
+ pandarallel.initialize()
+ 
+ # pandarallel will be initialized with 2 Go memory.
+ # If it is too small, you can specify the size of the memory in Mo.
+ # The example with a pandarallel memory of 5 Go:
+ 
+ # pandarallel.initialize(5000)
+ ```
+ 
  With `df` a pandas DataFrame, `series` a pandas Series, `col_name` the name of a pandas Dataframe column & `func` a function to apply/map,
  
  | Without parallelisation            | With parallelisation                        |
