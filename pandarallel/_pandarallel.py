@@ -9,6 +9,9 @@ SHM_SIZE_MO = int(2e3) # 2 Go
 NB_WORKERS = _multiprocessing.cpu_count()
 
 def _chunk(nb_elem, nb_chunks):
+    if nb_elem <= nb_chunks:
+        return [slice(idx, idx + 1) for idx in range(nb_elem)]
+
     quotient = nb_elem // nb_chunks
     remainder = nb_elem % nb_chunks
 
@@ -52,38 +55,46 @@ pandarallel.initialize(<size of memory in Mo>), and retry."
 
 class _DataFrame:
     @staticmethod
-    def worker(plasma_store_name, object_id, chunk, func, **kwargs):
+    def worker(plasma_store_name, object_id,  axis_chunk, func, *args,
+               **kwargs):
+        axis = kwargs.get("axis", 0)
         client = _plasma.connect(plasma_store_name)
         df = client.get(object_id)
-        return client.put(df[chunk].apply(func, **kwargs))
+        if axis == 1:
+            res = df[axis_chunk].apply(func, *args, **kwargs)
+        else:
+            chunk = slice(0, df.shape[0]), df.columns[axis_chunk]
+            res = df.loc[chunk].apply(func, *args, **kwargs)
+
+        return client.put(res)
 
     @staticmethod
     def apply(plasma_store_name, nb_workers, plasma_client):
         @_parallel(nb_workers, plasma_client)
-        def closure(data, func, **kwargs):
-            chunks = _chunk(data.shape[0], nb_workers)
+        def closure(df, func, *args, **kwargs):
             axis = kwargs.get("axis", 0)
-            if axis == 0:
-                msg = "dataframe.parallel_apply is only implemented \
-for axis=1. For axis=0, please use at the moment standard dataframe.apply. \
-Implementation of dataframe.parallel_apply with axis=0 will come soon."
-                raise NotImplementedError(msg)
+            if axis == 'index':
+                axis = 0
+            elif axis == 'columns':
+                axis = 1
 
-            object_id = plasma_client.put(data)
+            opposite_axis = 1 - axis
+            chunks = _chunk(df.shape[opposite_axis], nb_workers)
+
+            object_id = plasma_client.put(df)
 
             with _ProcessPoolExecutor(max_workers=nb_workers) as executor:
                 futures = [
-                            executor.submit(_DataFrame.worker, 
-                                            plasma_store_name, object_id, 
-                                            _chunk, func, **kwargs)
-                            for _chunk in chunks
+                            executor.submit(_DataFrame.worker,
+                                            plasma_store_name, object_id,
+                                            chunk, func, *args, **kwargs)
+                            for chunk in chunks
                         ]
 
             result = _pd.concat([
                                 plasma_client.get(future.result())
                                 for future in futures
                             ], copy=False)
-
 
             return result
         return closure
@@ -109,7 +120,7 @@ class _DataFrameGroupBy:
                                             func)
                             for key in keys
                         ]
-                
+
             result = _pd.DataFrame([
                                     plasma_client.get(future.result())
                                     for future in futures
@@ -152,7 +163,7 @@ class pandarallel:
     @classmethod
     def initialize(cls, shm_size_mo=SHM_SIZE_MO, nb_workers=NB_WORKERS):
         print(f"New pandarallel memory created - Size: {shm_size_mo} Mo")
-        
+
         cls.__store_ctx = _plasma.start_plasma_store(int(shm_size_mo * 1e6))
         plasma_store_name, _ = cls.__store_ctx.__enter__()
 

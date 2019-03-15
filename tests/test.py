@@ -6,7 +6,10 @@ import pandas as _pd
 import numpy as np
 import math
 
-def func_for_dataframe_apply(x):
+def func_for_dataframe_apply_axis_0(x):
+    return max(x) - min(x)
+
+def func_for_dataframe_apply_axis_1(x):
     return math.sin(x.a**2) + math.sin(x.b**2)
 
 def func_for_series_map(x):
@@ -23,13 +26,22 @@ def func_for_dataframe_groupby_apply(df):
 def plasma_client():
     pandarallel.initialize()
 
-def test_dataframe_apply(plasma_client):
+def test_dataframe_apply_axis_0(plasma_client):
     df_size = int(1e1)
     df = _pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
                         b=np.random.rand(df_size)))
 
-    res = df.apply(func_for_dataframe_apply, axis=1)
-    res_parallel = df.parallel_apply(func_for_dataframe_apply, axis=1)
+    res = df.apply(func_for_dataframe_apply_axis_0)
+    res_parallel = df.parallel_apply(func_for_dataframe_apply_axis_0)
+    assert res.equals(res_parallel)
+
+def test_dataframe_apply_axis_1(plasma_client):
+    df_size = int(1e1)
+    df = _pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
+                        b=np.random.rand(df_size)))
+
+    res = df.apply(func_for_dataframe_apply_axis_1, axis=1)
+    res_parallel = df.parallel_apply(func_for_dataframe_apply_axis_1, axis=1)
     assert res.equals(res_parallel)
 
 def test_series_map(plasma_client):

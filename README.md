@@ -86,8 +86,7 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
 
  | Without parallelisation            | With parallelisation                        |
  | ---------------------------------- | ------------------------------------------- |
- | `df.apply(func, axis=1)`           | `df.parallel_apply(func, axis=1)`           |
+ | `df.apply(func)`                   | `df.parallel_apply(func)`                   |
  | `series.map(func)`                 | `series.parallel_map(func)`                 |
  | `df.groupby(col_name).apply(func)` | `df.groupby(col_name).parallel_apply(func)` |
 
-  _Note: ``apply`` on DataFrame with ``axis=0`` is not yet implemented._
