@@ -1,5 +1,10 @@
-# pandaral·lel
+# Pandaral·lel
 An easy to use library to speed up computation (by parallelizing on multi CPUs) with [pandas](https://pandas.pydata.org/).
+
+
+ | Without parallelisation  | ![Without Pandarallel](https://github.com/nalepae/pandarallel/blob/master/docs/progress_apply.gif)       |
+ | :----------------------: | -------------------------------------------------------------------------------------------------------- |
+ | **With parallelisation** | ![With Pandarallel](https://github.com/nalepae/pandarallel/blob/master/docs/progress_parallel_apply.gif) |
 
 <table>
 <tr>
@@ -27,8 +32,8 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
 ## Requirements
  - [pandas](https://pypi.org/project/pandas/)
  - [pyarrow](https://pypi.org/project/pyarrow/)
- 
- 
+
+
 ## Warnings
   - The V1.0 of this library is not yet released. API is able to change at any time.
   - Parallelization has a cost (instanciating new processes, transmitting data via shared memory, etc ...), so parallelization is efficiant only if the amount of computation to parallelize is high enough. For very little amount of data, using parallezation not always worth it.
@@ -37,7 +42,7 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
  ```python
  from pandarallel import pandarallel
  from math import sin
- 
+
  pandarallel.initialize()
 
  # FORBIDDEN
@@ -89,4 +94,3 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
  | `df.apply(func)`                   | `df.parallel_apply(func)`                   |
  | `series.map(func)`                 | `series.parallel_map(func)`                 |
  | `df.groupby(col_name).apply(func)` | `df.groupby(col_name).parallel_apply(func)` |
-

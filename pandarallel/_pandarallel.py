@@ -4,9 +4,12 @@ from pyarrow.lib import PlasmaStoreFull as _PlasmaStoreFull
 import multiprocessing as _multiprocessing
 import itertools as _itertools
 from concurrent.futures import ProcessPoolExecutor as _ProcessPoolExecutor
+import functools
+from tqdm._tqdm_notebook import tqdm_notebook
 
 SHM_SIZE_MO = int(2e3) # 2 Go
 NB_WORKERS = _multiprocessing.cpu_count()
+PROGRESS_BAR = False
 
 def _chunk(nb_elem, nb_chunks):
     if nb_elem <= nb_chunks:
@@ -36,7 +39,6 @@ def _parallel(nb_workers, client):
     def decorator(func):
         def wrapper(*args, **kwargs):
             try:
-                print(f"Running task on {nb_workers} workers")
                 return func(*args, **kwargs)
 
             except _PlasmaStoreFull:
@@ -55,21 +57,29 @@ pandarallel.initialize(<size of memory in Mo>), and retry."
 
 class _DataFrame:
     @staticmethod
-    def worker(plasma_store_name, object_id,  axis_chunk, func, *args,
-               **kwargs):
+    def worker(plasma_store_name, object_id,  axis_chunk, func,
+               progress_bar, *args, **kwargs):
         axis = kwargs.get("axis", 0)
         client = _plasma.connect(plasma_store_name)
         df = client.get(object_id)
+        apply_func = "progress_apply" if progress_bar else "apply"
+
         if axis == 1:
-            res = df[axis_chunk].apply(func, *args, **kwargs)
+            if progress_bar:
+                # This following print is a workaround for this issue:
+                # https://github.com/tqdm/tqdm/issues/485
+                print(' ', end='', flush=True)
+            res = getattr(df[axis_chunk], apply_func)(func, *args, **kwargs)
         else:
             chunk = slice(0, df.shape[0]), df.columns[axis_chunk]
-            res = df.loc[chunk].apply(func, *args, **kwargs)
+            res = getattr(df.loc[chunk], apply_func)(func, *args, **kwargs)
 
         return client.put(res)
 
     @staticmethod
-    def apply(plasma_store_name, nb_workers, plasma_client):
+    def apply(plasma_store_name, nb_workers, plasma_client,
+              progress_bar=False):
+
         @_parallel(nb_workers, plasma_client)
         def closure(df, func, *args, **kwargs):
             axis = kwargs.get("axis", 0)
@@ -85,11 +95,12 @@ class _DataFrame:
 
             with _ProcessPoolExecutor(max_workers=nb_workers) as executor:
                 futures = [
-                            executor.submit(_DataFrame.worker,
-                                            plasma_store_name, object_id,
-                                            chunk, func, *args, **kwargs)
-                            for chunk in chunks
-                        ]
+                    executor.submit(_DataFrame.worker,
+                                    plasma_store_name, object_id,
+                                    chunk, func, progress_bar,
+                                    *args, **kwargs)
+                    for index, chunk in enumerate(chunks)
+                ]
 
             result = _pd.concat([
                                 plasma_client.get(future.result())
@@ -161,8 +172,15 @@ class _Series:
 
 class pandarallel:
     @classmethod
-    def initialize(cls, shm_size_mo=SHM_SIZE_MO, nb_workers=NB_WORKERS):
+    def initialize(cls, shm_size_mo=SHM_SIZE_MO, nb_workers=NB_WORKERS,
+                   progress_bar=False):
         print(f"New pandarallel memory created - Size: {shm_size_mo} Mo")
+        print(f"Pandarallel will run on {nb_workers} workers")
+
+        if progress_bar:
+            print("WARNING: Progress bar is an experimental feature which \
+can lead to a sensitive performance lost")
+            tqdm_notebook().pandas()
 
         cls.__store_ctx = _plasma.start_plasma_store(int(shm_size_mo * 1e6))
         plasma_store_name, _ = cls.__store_ctx.__enter__()
@@ -171,6 +189,6 @@ class pandarallel:
 
         args = plasma_store_name, nb_workers, plasma_client
 
-        _pd.DataFrame.parallel_apply = _DataFrame.apply(*args)
-        _pd.core.groupby.DataFrameGroupBy.parallel_apply = _DataFrameGroupBy.apply(*args)
+        _pd.DataFrame.parallel_apply = _DataFrame.apply(*args, progress_bar)
         _pd.Series.parallel_map = _Series.map(*args)
+        _pd.core.groupby.DataFrameGroupBy.parallel_apply = _DataFrameGroupBy.apply(*args)
