@@ -88,9 +88,11 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
  of cores your operating system sees. (int)
  - `progress_bar`: Put it to `True` to display a progress bar.
  **WARNING**: Progress bar is an experimental feature. This can lead to a
- sensitive performance loss. Available only for `Dataframe.parallel_apply`.
+ sensitive performance loss.
+ Not available for `DataFrameGroupy.parallel_apply`.
 
- With `df` a pandas DataFrame, `series` a pandas Series, `col_name` the name of a pandas Dataframe column & `func` a function to apply/map,
+ With `df` a pandas DataFrame, `series` a pandas Series, `col_name` the name of
+a pandas Dataframe column & `func` a function to apply/map:
 
  | Without parallelisation            | With parallelisation                        |
  | ---------------------------------- | ------------------------------------------- |

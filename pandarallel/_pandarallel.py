@@ -165,22 +165,34 @@ class _DataFrameGroupBy:
 
 class _Series:
     @staticmethod
-    def worker(plasma_store_name, object_id, chunk, func):
+    def worker(plasma_store_name, object_id, chunk, arg, progress_bar,
+               **kwargs):
         client = _plasma.connect(plasma_store_name)
         series = client.get(object_id)
-        return client.put(series[chunk].map(func))
+
+        map_func = "progress_map" if progress_bar else "map"
+
+        if progress_bar:
+            # This following print is a workaround for this issue:
+            # https://github.com/tqdm/tqdm/issues/485
+            print(' ', end='', flush=True)
+
+        res = getattr(series[chunk], map_func)(arg, **kwargs)
+
+        return client.put(res)
 
     @staticmethod
-    def map(plasma_store_name, nb_workers, plasma_client):
+    def map(plasma_store_name, nb_workers, plasma_client, progress_bar):
         @_parallel(nb_workers, plasma_client)
-        def closure(data, func):
+        def closure(data, arg, **kwargs):
             chunks = _chunk(data.size, nb_workers)
             object_id = plasma_client.put(data)
 
             with _ProcessPoolExecutor(max_workers=nb_workers) as executor:
                 futures = [
                             executor.submit(_Series.worker, plasma_store_name,
-                                            object_id, _chunk, func)
+                                            object_id, _chunk, arg,
+                                            progress_bar, **kwargs)
                             for _chunk in chunks
                         ]
 
@@ -229,5 +241,5 @@ can lead to a sensitive performance loss")
         args = plasma_store_name, nb_workers, plasma_client
 
         _pd.DataFrame.parallel_apply = _DataFrame.apply(*args, progress_bar)
-        _pd.Series.parallel_map = _Series.map(*args)
+        _pd.Series.parallel_map = _Series.map(*args, progress_bar)
         _pd.core.groupby.DataFrameGroupBy.parallel_apply = _DataFrameGroupBy.apply(*args)
