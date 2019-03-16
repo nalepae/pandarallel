@@ -1,15 +1,14 @@
 from setuptools import setup, find_packages
 
-import pandarallel
-
 install_requires = [
     'pandas',
     'pyarrow >= 0.12.1',
+    'tqdm >= 4.31.1',
 ]
 
 setup(
     name='pandarallel',
-    version=pandarallel.__version__,
+    version='0.1.2',
     packages=find_packages(),
     author='Manu NALEPA',
     author_email='nalepae@gmail.com',

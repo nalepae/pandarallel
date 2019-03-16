@@ -4,19 +4,41 @@ from pyarrow.lib import PlasmaStoreFull as _PlasmaStoreFull
 import multiprocessing as _multiprocessing
 import itertools as _itertools
 from concurrent.futures import ProcessPoolExecutor as _ProcessPoolExecutor
-import functools
 from tqdm._tqdm_notebook import tqdm_notebook
 
 SHM_SIZE_MO = int(2e3) # 2 Go
 NB_WORKERS = _multiprocessing.cpu_count()
 PROGRESS_BAR = False
 
-def _chunk(nb_elem, nb_chunks):
-    if nb_elem <= nb_chunks:
-        return [slice(idx, idx + 1) for idx in range(nb_elem)]
+def _chunk(nb_item, nb_chunks):
+    """
+    Return `nb_chunks` slices of approximatively `nb_item / nb_chunks` each.
 
-    quotient = nb_elem // nb_chunks
-    remainder = nb_elem % nb_chunks
+    Parameters
+    ----------
+    nb_item : int
+        Total number of items
+
+    nb_chunks : int
+        Number of chunks to return
+
+    Returns
+    -------
+    A list of slices
+
+
+    Examples
+    --------
+    >>> chunks = _pandarallel._chunk(103, 4)
+    >>> chunks
+    [slice(0, 26, None), slice(26, 52, None), slice(52, 78, None),
+     slice(78, 103, None)]
+    """
+    if nb_item <= nb_chunks:
+        return [slice(idx, idx + 1) for idx in range(nb_item)]
+
+    quotient = nb_item // nb_chunks
+    remainder = nb_item % nb_chunks
 
     quotients = [quotient] * nb_chunks
     remainders = [1] * remainder + [0] * (nb_chunks - remainder)
@@ -38,6 +60,7 @@ def _chunk(nb_elem, nb_chunks):
 def _parallel(nb_workers, client):
     def decorator(func):
         def wrapper(*args, **kwargs):
+            """Please see the docstring of this method without `parallel`"""
             try:
                 return func(*args, **kwargs)
 
@@ -79,7 +102,6 @@ class _DataFrame:
     @staticmethod
     def apply(plasma_store_name, nb_workers, plasma_client,
               progress_bar=False):
-
         @_parallel(nb_workers, plasma_client)
         def closure(df, func, *args, **kwargs):
             axis = kwargs.get("axis", 0)
@@ -174,12 +196,29 @@ class pandarallel:
     @classmethod
     def initialize(cls, shm_size_mo=SHM_SIZE_MO, nb_workers=NB_WORKERS,
                    progress_bar=False):
+        """
+        Initialize Pandarallel shared memory.
+
+        Parameters
+        ----------
+        shm_size_mo : int, optional
+            Size of Pandarallel shared memory
+
+        nb_workers : int, optional
+            Number of worker used for parallelisation
+
+        progress_bar : bool, optional
+            Display a progress bar
+            WARNING: Progress bar is an experimental feature.
+                     This can lead to a sensitive performance loss.
+        """
+
         print(f"New pandarallel memory created - Size: {shm_size_mo} Mo")
         print(f"Pandarallel will run on {nb_workers} workers")
 
         if progress_bar:
-            print("WARNING: Progress bar is an experimental feature which \
-can lead to a sensitive performance lost")
+            print("WARNING: Progress bar is an experimental feature. This \
+can lead to a sensitive performance loss")
             tqdm_notebook().pandas()
 
         cls.__store_ctx = _plasma.start_plasma_store(int(shm_size_mo * 1e6))

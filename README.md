@@ -79,13 +79,16 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
  Then, you have to initialize it.
   ```python
  pandarallel.initialize()
-
- # pandarallel will be initialized with 2 Go memory.
- # If it is too small, you can specify the size of the memory in Mo.
- # The example with a pandarallel memory of 5 Go:
-
- # pandarallel.initialize(5000)
  ```
+ This method takes 3 optional parameters:
+ - `shm_size_mo`: The size of the Pandarallel shared memory in Mo. If the
+ default one is too small, it is possible to set a larger one. By default,
+ it is set to 2 Go. (int)
+ - `nb_workers`: The number of workers. By default, it is set to the number
+ of cores your operating system sees. (int)
+ - `progress_bar`: Put it to `True` to display a progress bar.
+ **WARNING**: Progress bar is an experimental feature. This can lead to a
+ sensitive performance loss. Available only for `Dataframe.parallel_apply`.
 
  With `df` a pandas DataFrame, `series` a pandas Series, `col_name` the name of a pandas Dataframe column & `func` a function to apply/map,
 
