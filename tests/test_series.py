@@ -7,19 +7,23 @@ import numpy as np
 import math
 
 
-
-
 def test_series() : 
     
+    # dummy series
     ser = _pd.Series(np.random.randint(0, 1000, 100000))
     pandarallel.initialize()
 
+    # funct
     def f(i) : 
         return i**2
 
-    ser_apply = ser.apply(f)
-    ser_parallel = ser.parallel_apply(f)
+    # various apply
+    ser_apply       = ser.apply(f)
+    ser_parallel    = ser.parallel_apply(f, axis=1)
 
-    assert (ser.apply == ser_parallel).all()
+    # check consistancy
+    assert (ser_apply == ser_parallel).all()
+
+
 
 
