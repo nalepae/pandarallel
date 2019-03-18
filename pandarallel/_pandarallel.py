@@ -195,7 +195,7 @@ class _Series:
 class pandarallel:
     @classmethod
     def initialize(cls, shm_size_mo=SHM_SIZE_MO, nb_workers=NB_WORKERS,
-                   progress_bar=False):
+                   progress_bar=True):
         """
         Initialize Pandarallel shared memory.
 
@@ -217,8 +217,9 @@ class pandarallel:
         print(f"Pandarallel will run on {nb_workers} workers")
 
         if progress_bar:
-            print("WARNING: Progress bar is an experimental feature. This \
-can lead to a sensitive performance loss")
+            print(  "WARNING: Progress bar is an experimental feature. This"
+                    "can lead to a sensitive performance loss"
+                    "if needed please try : pandarallel.initialize(progress_bar=False)")
             tqdm_notebook().pandas()
 
         cls.__store_ctx = _plasma.start_plasma_store(int(shm_size_mo * 1e6))
