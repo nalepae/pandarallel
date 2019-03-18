@@ -172,7 +172,10 @@ class _Series:
 
     @staticmethod
     def apply(plasma_store_name, nb_workers, plasma_client):
-        raise NotImplementedError(" NotImplementedError")
+
+        print(type(data))
+        
+        raise NotImplementedError("NotImplementedError")
 
     @staticmethod
     def map(plasma_store_name, nb_workers, plasma_client):
