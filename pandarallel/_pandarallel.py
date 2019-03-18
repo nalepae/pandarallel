@@ -237,7 +237,7 @@ can lead to a sensitive performance loss")
         # _pd.DataFrame.parallel_map    = _DataFrame.map(*args, progress_bar)
         
         # Series
-        # _pd.Series.parallel_apply     = _Series.applymap(*args)
+        _pd.Series.parallel_apply       = _Series.apply(*args)
         _pd.Series.parallel_map         = _Series.map(*args)
 
         # GroupBy
