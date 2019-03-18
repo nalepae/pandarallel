@@ -172,11 +172,15 @@ class _Series:
 
     @staticmethod
     def apply(plasma_store_name, nb_workers, plasma_client):
+        @_parallel(nb_workers, plasma_client)
+        def closure(data, func, **kwargs):
 
-        print(type(data))
+            df = _pd.DataFrame({"d" : data})
+            _df = df.parallel_apply(func, **kwargs)
+            
+            return _pd.Series(_df.d.values)
+        return closure
         
-        raise NotImplementedError("NotImplementedError")
-
     @staticmethod
     def map(plasma_store_name, nb_workers, plasma_client):
         @_parallel(nb_workers, plasma_client)
