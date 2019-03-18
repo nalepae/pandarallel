@@ -171,6 +171,10 @@ class _Series:
         return client.put(series[chunk].map(func))
 
     @staticmethod
+    def apply(plasma_store_name, nb_workers, plasma_client):
+        raise NotImplementedError(" NotImplementedError")
+
+    @staticmethod
     def map(plasma_store_name, nb_workers, plasma_client):
         @_parallel(nb_workers, plasma_client)
         def closure(data, func):
@@ -228,6 +232,16 @@ can lead to a sensitive performance loss")
 
         args = plasma_store_name, nb_workers, plasma_client
 
-        _pd.DataFrame.parallel_apply = _DataFrame.apply(*args, progress_bar)
-        _pd.Series.parallel_map = _Series.map(*args)
+        # DataFrames
+        _pd.DataFrame.parallel_apply    = _DataFrame.apply(*args, progress_bar)
+        # _pd.DataFrame.parallel_map    = _DataFrame.map(*args, progress_bar)
+        
+        # Series
+        # _pd.Series.parallel_apply     = _Series.applymap(*args)
+        _pd.Series.parallel_map         = _Series.map(*args)
+
+        # GroupBy
         _pd.core.groupby.DataFrameGroupBy.parallel_apply = _DataFrameGroupBy.apply(*args)
+
+
+
