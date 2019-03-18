@@ -61,3 +61,4 @@ def test_dataframe_groupby_apply(plasma_client):
     res_parallel = (df.groupby("a")
                       .parallel_apply(func_for_dataframe_groupby_apply))
     res.equals(res_parallel.squeeze())
+
