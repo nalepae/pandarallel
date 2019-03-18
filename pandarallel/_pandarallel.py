@@ -174,11 +174,7 @@ class _Series:
     def apply(plasma_store_name, nb_workers, plasma_client):
         @_parallel(nb_workers, plasma_client)
         def closure(data, func, **kwargs):
-
-            df = _pd.DataFrame({"d" : data})
-            _df = df.parallel_apply(func, **kwargs)
-            
-            return _pd.Series(_df.d.values)
+            return _pd.Series(_pd.DataFrame({"d" : data}).parallel_apply(func, **kwargs)["d"].values)   
         return closure
         
     @staticmethod
