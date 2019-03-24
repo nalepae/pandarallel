@@ -1,4 +1,5 @@
 import pandas as _pd
+import numpy as np
 import pyarrow.plasma as _plasma
 from pyarrow.lib import PlasmaStoreFull as _PlasmaStoreFull
 import multiprocessing as _multiprocessing
@@ -134,31 +135,34 @@ class _DataFrame:
 
 class _DataFrameGroupBy:
     @staticmethod
-    def worker(plasma_store_name, object_id, func):
+    def worker(plasma_store_name, object_id, keys, func, *args, **kwargs):
         client = _plasma.connect(plasma_store_name)
         df = client.get(object_id)
-        return client.put(func(df))
+        return client.put(df.groupby(keys).apply(func, *args, **kwargs))
 
     @staticmethod
     def apply(plasma_store_name, nb_workers, plasma_client):
         @_parallel(nb_workers, plasma_client)
-        def closure(data, func, **kwargs):
-            keys = data.groups.keys()
+        def closure(df_grouped, func, *args, **kwargs):
+            groups = list(df_grouped.groups.values())
+            keys = df_grouped.keys
+            slices = _chunk(len(groups), nb_workers)
+            futures = []
 
             with _ProcessPoolExecutor(max_workers=nb_workers) as executor:
-                futures = [
-                            executor.submit(_DataFrameGroupBy.worker,
-                                            plasma_store_name,
-                                            plasma_client.put(data.get_group(key)),
-                                            func)
-                            for key in keys
-                        ]
+                for slice_ in slices:
+                    indexes = [index.to_numpy() for index in groups[slice_]]
+                    sub_df = df_grouped.obj.iloc[np.concatenate(indexes)]
+                    object_id = plasma_client.put(sub_df)
+                    future = executor.submit(_DataFrameGroupBy.worker,
+                                             plasma_store_name, object_id,
+                                             keys, func, *args, **kwargs)
+                    futures.append(future)
 
-            result = _pd.DataFrame([
-                                    plasma_client.get(future.result())
-                                    for future in futures
-                                ], index=_pd.Series(list(data.grouper),
-                                name=data.keys))
+            result = _pd.concat([
+                                plasma_client.get(future.result())
+                                for future in futures
+                            ], copy=False)
 
             return result
         return closure
