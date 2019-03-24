@@ -1,3 +1,4 @@
+import itertools
 import pandas as _pd
 import numpy as np
 import pyarrow.plasma as _plasma
@@ -135,35 +136,42 @@ class _DataFrame:
 
 class _DataFrameGroupBy:
     @staticmethod
-    def worker(plasma_store_name, object_id, keys, func, *args, **kwargs):
+    def worker(plasma_store_name, object_id, groups_id, chunk,
+               func, *args, **kwargs):
         client = _plasma.connect(plasma_store_name)
         df = client.get(object_id)
-        return client.put(df.groupby(keys).apply(func, *args, **kwargs))
+        groups = client.get(groups_id)[chunk]
+        result = [
+                    func(df.iloc[indexes], *args, **kwargs)
+                    for _, indexes in groups
+        ]
+
+        return client.put(result)
 
     @staticmethod
     def apply(plasma_store_name, nb_workers, plasma_client):
         @_parallel(nb_workers, plasma_client)
         def closure(df_grouped, func, *args, **kwargs):
-            groups = list(df_grouped.groups.values())
-            keys = df_grouped.keys
-            slices = _chunk(len(groups), nb_workers)
-            futures = []
+            groups = list(df_grouped.groups.items())
+            chunks = _chunk(len(groups), nb_workers)
+            object_id = plasma_client.put(df_grouped.obj)
+            groups_id = plasma_client.put(groups)
 
             with _ProcessPoolExecutor(max_workers=nb_workers) as executor:
-                for slice_ in slices:
-                    indexes = [index.to_numpy() for index in groups[slice_]]
-                    sub_df = df_grouped.obj.iloc[np.concatenate(indexes)]
-                    object_id = plasma_client.put(sub_df)
-                    future = executor.submit(_DataFrameGroupBy.worker,
-                                             plasma_store_name, object_id,
-                                             keys, func, *args, **kwargs)
-                    futures.append(future)
+                futures = [
+                    executor.submit(_DataFrameGroupBy.worker,
+                                    plasma_store_name, object_id,
+                                    groups_id, chunk, func, *args, **kwargs)
+                    for chunk in chunks
+                ]
 
-            result = _pd.concat([
-                                plasma_client.get(future.result())
-                                for future in futures
-                            ], copy=False)
-
+            result = _pd.DataFrame(list(itertools.chain.from_iterable([
+                                    plasma_client.get(future.result())
+                                    for future in futures
+                                   ])),
+                                   index=_pd.Series(list(df_grouped.grouper),
+                                   name=df_grouped.keys)
+                     ).squeeze()
             return result
         return closure
 
