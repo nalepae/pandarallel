@@ -177,8 +177,8 @@ class _DataFrameGroupBy:
 
 class _Series:
     @staticmethod
-    def worker(plasma_store_name, object_id, chunk, arg, progress_bar,
-               **kwargs):
+    def worker_map(plasma_store_name, object_id, chunk, arg, progress_bar,
+                   **kwargs):
         client = _plasma.connect(plasma_store_name)
         series = client.get(object_id)
 
@@ -202,9 +202,10 @@ class _Series:
 
             with _ProcessPoolExecutor(max_workers=nb_workers) as executor:
                 futures = [
-                            executor.submit(_Series.worker, plasma_store_name,
-                                            object_id, _chunk, arg,
-                                            progress_bar, **kwargs)
+                            executor.submit(_Series.worker_map,
+                                            plasma_store_name, object_id,
+                                            _chunk, arg, progress_bar,
+                                            **kwargs)
                             for _chunk in chunks
                         ]
 
@@ -215,6 +216,49 @@ class _Series:
 
             return result
         return closure
+
+    @staticmethod
+    def worker_apply(plasma_store_name, object_id, chunk, func,
+                        progress_bar, *args, **kwargs):
+        client = _plasma.connect(plasma_store_name)
+        series = client.get(object_id)
+
+        apply_func = "progress_apply" if progress_bar else "apply"
+
+        if progress_bar:
+            # This following print is a workaround for this issue:
+            # https://github.com/tqdm/tqdm/issues/485
+            print(' ', end='', flush=True)
+
+        res = getattr(series[chunk], apply_func)(func, *args, **kwargs)
+
+        return client.put(res)
+
+
+    @staticmethod
+    def apply(plasma_store_name, nb_workers, plasma_client, progress_bar):
+        @_parallel(nb_workers, plasma_client)
+        def closure(series, func, *args, **kwargs):
+            chunks = _chunk(series.size, nb_workers)
+            object_id = plasma_client.put(series)
+
+            with _ProcessPoolExecutor(max_workers=nb_workers) as executor:
+                futures = [
+                            executor.submit(_Series.worker_apply,
+                                            plasma_store_name, object_id,
+                                            chunk, func, progress_bar,
+                                            *args, **kwargs)
+                            for chunk in chunks
+                        ]
+
+            result = _pd.concat([
+                                plasma_client.get(future.result())
+                                for future in futures
+                            ], copy=False)
+
+            return result
+        return closure
+
 
 class pandarallel:
     @classmethod
@@ -254,4 +298,5 @@ can lead to a sensitive performance loss")
 
         _pd.DataFrame.parallel_apply = _DataFrame.apply(*args, progress_bar)
         _pd.Series.parallel_map = _Series.map(*args, progress_bar)
+        _pd.Series.parallel_apply = _Series.apply(*args, progress_bar)
         _pd.core.groupby.DataFrameGroupBy.parallel_apply = _DataFrameGroupBy.apply(*args)

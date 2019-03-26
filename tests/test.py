@@ -15,6 +15,9 @@ def func_for_dataframe_apply_axis_1(x):
 def func_for_series_map(x):
     return math.log10(math.sqrt(math.exp(x**2)))
 
+def func_for_series_apply(x, power, bias=0):
+    return math.log10(math.sqrt(math.exp(x**power))) + bias
+
 def func_for_dataframe_groupby_apply(df):
     dum = 0
     for item in df.b:
@@ -50,6 +53,15 @@ def test_series_map(plasma_client):
 
     res = df.a.map(func_for_series_map)
     res_parallel = df.a.parallel_map(func_for_series_map)
+    assert res.equals(res_parallel)
+
+def test_series_apply(plasma_client):
+    df_size = int(1e1)
+    df = _pd.DataFrame(dict(a=np.random.rand(df_size) + 1))
+
+    res = df.a.apply(func_for_series_apply, args=(2,), bias=3)
+    res_parallel = df.a.parallel_apply(func_for_series_apply, args=(2,),
+                                       bias=3)
     assert res.equals(res_parallel)
 
 def test_dataframe_groupby_apply(plasma_client):
