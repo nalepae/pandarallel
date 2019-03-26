@@ -12,6 +12,9 @@ def func_for_dataframe_apply_axis_0(x):
 def func_for_dataframe_apply_axis_1(x):
     return math.sin(x.a**2) + math.sin(x.b**2)
 
+def func_for_dataframe_applymap(x):
+    return math.sin(x**2) - math.cos(x**2)
+
 def func_for_series_map(x):
     return math.log10(math.sqrt(math.exp(x**2)))
 
@@ -45,6 +48,15 @@ def test_dataframe_apply_axis_1(plasma_client):
 
     res = df.apply(func_for_dataframe_apply_axis_1, axis=1)
     res_parallel = df.parallel_apply(func_for_dataframe_apply_axis_1, axis=1)
+    assert res.equals(res_parallel)
+
+def test_dataframe_applymap(plasma_client):
+    df_size = int(1e1)
+    df = _pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
+                            b=np.random.rand(df_size)))
+
+    res = df.applymap(func_for_dataframe_applymap)
+    res_parallel = df.parallel_applymap(func_for_dataframe_applymap)
     assert res.equals(res_parallel)
 
 def test_series_map(plasma_client):

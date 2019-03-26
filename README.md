@@ -97,6 +97,7 @@ a pandas Dataframe column & `func` a function to apply/map:
  | Without parallelisation            | With parallelisation                        |
  | ---------------------------------- | ------------------------------------------- |
  | `df.apply(func)`                   | `df.parallel_apply(func)`                   |
+ | `df.applymap(func)`                | `df.parallel_applymap(func)`                |
  | `series.map(func)`                 | `series.parallel_map(func)`                 |
  | `series.apply(func)`               | `series.parallel_apply(func)`               |
  | `df.groupby(col_name).apply(func)` | `df.groupby(col_name).parallel_apply(func)` |
