@@ -180,8 +180,6 @@ class _DataFrame:
             return result
         return closure
 
-
-
 class _DataFrameGroupBy:
     @staticmethod
     def worker(plasma_store_name, object_id, groups_id, chunk,
@@ -309,9 +307,8 @@ class _Series:
 
 class _SeriesRolling:
     @staticmethod
-    def worker(plasma_store_name, num, object_id, window, min_periods, center,
-               win_type, on, axis, closed, chunk, func, progress_bar,
-               *args, **kwargs):
+    def worker(plasma_store_name, num, object_id, attribute2value, chunk, func,
+               progress_bar, *args, **kwargs):
         client = _plasma.connect(plasma_store_name)
         series = client.get(object_id)
 
@@ -322,13 +319,11 @@ class _SeriesRolling:
             # https://github.com/tqdm/tqdm/issues/485
             print(' ', end='', flush=True)
 
-        series_chunk_rolling = series[chunk].rolling(window, min_periods,
-                                                     center, win_type, on,
-                                                     axis, closed)
+        series_chunk_rolling = series[chunk].rolling(**attribute2value)
 
         res = getattr(series_chunk_rolling, apply_func)(func, *args, **kwargs)
 
-        res = res if num == 0 else res[window:]
+        res = res if num == 0 else res[attribute2value['window']:]
 
         return client.put(res)
 
@@ -341,15 +336,14 @@ class _SeriesRolling:
             chunks = _chunk(len(series), nb_workers, window)
             object_id = plasma_client.put(series)
 
+            attribute2value = {attribute: getattr(rolling, attribute)
+                               for attribute in rolling._attributes}
+
             with _ProcessPoolExecutor(max_workers=nb_workers) as executor:
                 futures = [
                             executor.submit(_SeriesRolling.worker,
                                             plasma_store_name, num, object_id,
-                                            rolling.window,
-                                            rolling.min_periods,
-                                            rolling.center, rolling.win_type,
-                                            rolling.on, rolling.axis,
-                                            rolling.closed,
+                                            attribute2value,
                                             chunk, func, progress_bar,
                                             *args, **kwargs)
                             for num, chunk in enumerate(chunks)
