@@ -357,6 +357,53 @@ class _SeriesRolling:
             return result
         return closure
 
+class _RollingGroupby:
+    @staticmethod
+    def worker(plasma_store_name, object_id, groups_id, attribute2value, chunk,
+               func, *args, **kwargs):
+        client = _plasma.connect(plasma_store_name)
+        df = client.get(object_id)
+        groups = client.get(groups_id)[chunk]
+
+        results = []
+        for name, indexes in groups:
+            item = (df.iloc[indexes].rolling(**attribute2value)
+                                    .apply(func, *args, **kwargs))
+
+            item.index = _pd.MultiIndex.from_product([[name], item.index])
+
+            results.append(item)
+
+        return client.put(_pd.concat(results))
+
+    @staticmethod
+    def apply(plasma_store_name, nb_workers, plasma_client):
+        @_parallel(nb_workers, plasma_client)
+        def closure(rolling_groupby, func, *args, **kwargs):
+            groups = list(rolling_groupby._groupby.groups.items())
+            chunks = _chunk(len(groups), nb_workers)
+            object_id = plasma_client.put(rolling_groupby.obj)
+            groups_id = plasma_client.put(groups)
+
+            attribute2value = {attribute: getattr(rolling_groupby, attribute)
+                               for attribute in rolling_groupby._attributes}
+
+            with _ProcessPoolExecutor(max_workers=nb_workers) as executor:
+                futures = [
+                    executor.submit(_RollingGroupby.worker, plasma_store_name,
+                                    object_id, groups_id, attribute2value,
+                                    chunk, func, *args, **kwargs)
+                    for chunk in chunks
+                ]
+
+            result = _pd.concat([
+                                plasma_client.get(future.result())
+                                for future in futures
+                            ], copy=False)
+
+            return result
+        return closure
+
 
 class pandarallel:
     @classmethod
@@ -403,3 +450,5 @@ can lead to a sensitive performance loss")
         _pd.core.window.Rolling.parallel_apply = _SeriesRolling.apply(*args, progress_bar)
 
         _pd.core.groupby.DataFrameGroupBy.parallel_apply = _DataFrameGroupBy.apply(*args)
+
+        _pd.core.window.RollingGroupby.parallel_apply = _RollingGroupby.apply(*args)

@@ -31,6 +31,9 @@ def func_for_dataframe_groupby_apply(df):
 
     return dum / len(df.b)
 
+def func_for_dataframe_groupby_rolling_apply(x):
+    return x.iloc[0] + x.iloc[1] ** 2 + x.iloc[2] ** 3 + x.iloc[3] ** 4
+
 @pytest.fixture(scope="session")
 def plasma_client():
     pandarallel.initialize()
@@ -98,4 +101,18 @@ def test_dataframe_groupby_apply(plasma_client):
     res = df.groupby("a").apply(func_for_dataframe_groupby_apply)
     res_parallel = (df.groupby("a")
                       .parallel_apply(func_for_dataframe_groupby_apply))
+    res.equals(res_parallel)
+
+def test_dataframe_groupby_rolling_apply(plasma_client):
+    df_size = int(1e2)
+    df = _pd.DataFrame(dict(a=np.random.randint(1, 3, df_size),
+                            b=np.random.rand(df_size)))
+
+    res = (df.groupby('a').b.rolling(4)
+             .apply(func_for_dataframe_groupby_rolling_apply, raw=False))
+    res_parallel = (df.groupby('a')
+                     .b.rolling(4)
+                     .parallel_apply(func_for_dataframe_groupby_rolling_apply,
+                                     raw=False)
+                   )
     res.equals(res_parallel)
