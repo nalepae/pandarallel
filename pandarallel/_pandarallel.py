@@ -12,7 +12,7 @@ SHM_SIZE_MO = int(2e3) # 2 Go
 NB_WORKERS = _multiprocessing.cpu_count()
 PROGRESS_BAR = False
 
-def _chunk(nb_item, nb_chunks):
+def _chunk(nb_item, nb_chunks, start_offset=0):
     """
     Return `nb_chunks` slices of approximatively `nb_item / nb_chunks` each.
 
@@ -23,6 +23,9 @@ def _chunk(nb_item, nb_chunks):
 
     nb_chunks : int
         Number of chunks to return
+
+    start_offset : int
+        Shift start of slice by this amount
 
     Returns
     -------
@@ -37,7 +40,10 @@ def _chunk(nb_item, nb_chunks):
      slice(78, 103, None)]
     """
     if nb_item <= nb_chunks:
-        return [slice(idx, idx + 1) for idx in range(nb_item)]
+        return [
+            slice(max(0, idx - start_offset), idx + 1)
+            for idx in range(nb_item)
+        ]
 
     quotient = nb_item // nb_chunks
     remainder = nb_item % nb_chunks
@@ -49,13 +55,14 @@ def _chunk(nb_item, nb_chunks):
                             quotient + remainder for quotient, remainder
                             in zip(quotients, remainders)
                         ]
+
     accumulated = list(_itertools.accumulate(nb_elems_per_chunk))
     shifted_accumulated = accumulated.copy()
     shifted_accumulated.insert(0, 0)
     shifted_accumulated.pop()
 
     return [
-            slice(begin, end) for begin, end
+            slice(max(0, begin - start_offset), end) for begin, end
             in zip(shifted_accumulated, accumulated)
         ]
 
@@ -260,7 +267,7 @@ class _Series:
 
     @staticmethod
     def worker_apply(plasma_store_name, object_id, chunk, func,
-                        progress_bar, *args, **kwargs):
+                     progress_bar, *args, **kwargs):
         client = _plasma.connect(plasma_store_name)
         series = client.get(object_id)
 
@@ -290,6 +297,62 @@ class _Series:
                                             chunk, func, progress_bar,
                                             *args, **kwargs)
                             for chunk in chunks
+                        ]
+
+            result = _pd.concat([
+                                plasma_client.get(future.result())
+                                for future in futures
+                            ], copy=False)
+
+            return result
+        return closure
+
+class _SeriesRolling:
+    @staticmethod
+    def worker(plasma_store_name, num, object_id, window, min_periods, center,
+               win_type, on, axis, closed, chunk, func, progress_bar,
+               *args, **kwargs):
+        client = _plasma.connect(plasma_store_name)
+        series = client.get(object_id)
+
+        apply_func = "progress_apply" if progress_bar else "apply"
+
+        if progress_bar:
+            # This following print is a workaround for this issue:
+            # https://github.com/tqdm/tqdm/issues/485
+            print(' ', end='', flush=True)
+
+        series_chunk_rolling = series[chunk].rolling(window, min_periods,
+                                                     center, win_type, on,
+                                                     axis, closed)
+
+        res = getattr(series_chunk_rolling, apply_func)(func, *args, **kwargs)
+
+        res = res if num == 0 else res[window:]
+
+        return client.put(res)
+
+    @staticmethod
+    def apply(plasma_store_name, nb_workers, plasma_client, progress_bar):
+        @_parallel(nb_workers, plasma_client)
+        def closure(rolling, func, *args, **kwargs):
+            series = rolling.obj
+            window = rolling.window
+            chunks = _chunk(len(series), nb_workers, window)
+            object_id = plasma_client.put(series)
+
+            with _ProcessPoolExecutor(max_workers=nb_workers) as executor:
+                futures = [
+                            executor.submit(_SeriesRolling.worker,
+                                            plasma_store_name, num, object_id,
+                                            rolling.window,
+                                            rolling.min_periods,
+                                            rolling.center, rolling.win_type,
+                                            rolling.on, rolling.axis,
+                                            rolling.closed,
+                                            chunk, func, progress_bar,
+                                            *args, **kwargs)
+                            for num, chunk in enumerate(chunks)
                         ]
 
             result = _pd.concat([
@@ -342,4 +405,7 @@ can lead to a sensitive performance loss")
 
         _pd.Series.parallel_map = _Series.map(*args, progress_bar)
         _pd.Series.parallel_apply = _Series.apply(*args, progress_bar)
+
+        _pd.core.window.Rolling.parallel_apply = _SeriesRolling.apply(*args, progress_bar)
+
         _pd.core.groupby.DataFrameGroupBy.parallel_apply = _DataFrameGroupBy.apply(*args)

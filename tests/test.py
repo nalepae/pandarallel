@@ -21,6 +21,9 @@ def func_for_series_map(x):
 def func_for_series_apply(x, power, bias=0):
     return math.log10(math.sqrt(math.exp(x**power))) + bias
 
+def func_for_series_rolling_apply(x):
+    return x.iloc[0] + x.iloc[1] ** 2 + x.iloc[2] ** 3 + x.iloc[3] ** 4
+
 def func_for_dataframe_groupby_apply(df):
     dum = 0
     for item in df.b:
@@ -74,6 +77,17 @@ def test_series_apply(plasma_client):
     res = df.a.apply(func_for_series_apply, args=(2,), bias=3)
     res_parallel = df.a.parallel_apply(func_for_series_apply, args=(2,),
                                        bias=3)
+    assert res.equals(res_parallel)
+
+def test_series_rolling_apply(plasma_client):
+    df_size = int(1e2)
+    df = _pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
+                      b=list(range(df_size))))
+
+    res = df.b.rolling(4).apply(func_for_series_rolling_apply, raw=False)
+    res_parallel = df.b.rolling(4).parallel_apply(func_for_series_rolling_apply,
+                                                  raw=False)
+
     assert res.equals(res_parallel)
 
 def test_dataframe_groupby_apply(plasma_client):

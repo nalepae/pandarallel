@@ -91,13 +91,14 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
  sensitive performance loss.
  Not available for `DataFrameGroupy.parallel_apply`.
 
- With `df` a pandas DataFrame, `series` a pandas Series, `col_name` the name of
-a pandas Dataframe column & `func` a function to apply/map:
+ With `df` a pandas DataFrame, `series` a pandas Series & `func` a function to
+ apply/map:
 
- | Without parallelisation            | With parallelisation                        |
- | ---------------------------------- | ------------------------------------------- |
- | `df.apply(func)`                   | `df.parallel_apply(func)`                   |
- | `df.applymap(func)`                | `df.parallel_applymap(func)`                |
- | `series.map(func)`                 | `series.parallel_map(func)`                 |
- | `series.apply(func)`               | `series.parallel_apply(func)`               |
- | `df.groupby(col_name).apply(func)` | `df.groupby(col_name).parallel_apply(func)` |
+ | Without parallelisation              | With parallelisation                          |
+ | ------------------------------------ | --------------------------------------------- |
+ | `df.apply(func)`                     | `df.parallel_apply(func)`                     |
+ | `df.applymap(func)`                  | `df.parallel_applymap(func)`                  |
+ | `df.groupby(<args>).apply(func)`     | `df.groupby(<args>).parallel_apply(func)`     |
+ | `series.map(func)`                   | `series.parallel_map(func)`                   |
+ | `series.apply(func)`                 | `series.parallel_apply(func)`                 |
+ | `series.rolling(<args>).apply(func)` | `series.rolling(<args>).parallel_apply(func)` |
