@@ -14,7 +14,7 @@ setup(
     author='Manu NALEPA',
     author_email='nalepae@gmail.com',
     description='An easy to use library to speed up computation (by parallelizing on multi CPUs) with pandas.',
-    long_description=open('README.md').read(),
+    long_description='See [here](https://github.com/nalepae/pandarallel/tree/v1.0.0) for complete user guide.',
     url='https://github.com/nalepae/pandarallel',
     install_requires=install_requires,
     license='BSD',
