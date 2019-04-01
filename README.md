@@ -60,7 +60,7 @@
 
 Computer used for this benchmark:
  - OS: Linux Ubuntu 16.04
- - Hardware: Intel Core i7 @ 3.40 GHz - 4 cores (8 threads)
+ - Hardware: Intel Core i7 @ 3.40 GHz - 4 cores
 
  ![Benchmark](https://github.com/nalepae/pandarallel/blob/3d470139d409fc2cf61bab085298011fefe638c0/docs/standard_vs_parallel_4_cores.png)
 
