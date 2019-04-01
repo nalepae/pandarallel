@@ -8,7 +8,7 @@ import itertools as _itertools
 from concurrent.futures import ProcessPoolExecutor as _ProcessPoolExecutor
 from tqdm._tqdm_notebook import tqdm_notebook
 
-SHM_SIZE_MO = int(2e3) # 2 Go
+SHM_SIZE_MB = int(2e3) # 2 GB
 NB_WORKERS = _multiprocessing.cpu_count()
 PROGRESS_BAR = False
 
@@ -77,7 +77,7 @@ def _parallel(nb_workers, client):
                 msg = f"The pandarallel shared memory is too small to allow \
 parallel computation. \
 Just after pandarallel import, please write: \
-pandarallel.initialize(<size of memory in Mo>), and retry."
+pandarallel.initialize(<size of memory in MB>), and retry."
 
                 raise Exception(msg)
 
@@ -407,14 +407,14 @@ class _RollingGroupby:
 
 class pandarallel:
     @classmethod
-    def initialize(cls, shm_size_mo=SHM_SIZE_MO, nb_workers=NB_WORKERS,
+    def initialize(cls, shm_size_mb=SHM_SIZE_MB, nb_workers=NB_WORKERS,
                    progress_bar=False):
         """
         Initialize Pandarallel shared memory.
 
         Parameters
         ----------
-        shm_size_mo : int, optional
+        shm_size_mb : int, optional
             Size of Pandarallel shared memory
 
         nb_workers : int, optional
@@ -426,7 +426,7 @@ class pandarallel:
                      This can lead to a considerable performance loss.
         """
 
-        print(f"New pandarallel memory created - Size: {shm_size_mo} Mo")
+        print(f"New pandarallel memory created - Size: {shm_size_mb} MB")
         print(f"Pandarallel will run on {nb_workers} workers")
 
         if progress_bar:
@@ -434,7 +434,7 @@ class pandarallel:
 can lead to a considerable performance loss.")
             tqdm_notebook().pandas()
 
-        cls.__store_ctx = _plasma.start_plasma_store(int(shm_size_mo * 1e6))
+        cls.__store_ctx = _plasma.start_plasma_store(int(shm_size_mb * 1e6))
         plasma_store_name, _ = cls.__store_ctx.__enter__()
 
         plasma_client = _plasma.connect(plasma_store_name)

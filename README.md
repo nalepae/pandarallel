@@ -80,9 +80,9 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
  pandarallel.initialize()
  ```
  This method takes 3 optional parameters:
- - `shm_size_mo`: The size of the Pandarallel shared memory in Mo. If the
+ - `shm_size_mb`: The size of the Pandarallel shared memory in MB. If the
  default one is too small, it is possible to set a larger one. By default,
- it is set to 2 Go. (int)
+ it is set to 2 GB. (int)
  - `nb_workers`: The number of workers. By default, it is set to the number
  of cores your operating system sees. (int)
  - `progress_bar`: Put it to `True` to display a progress bar.
