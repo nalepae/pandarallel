@@ -1,5 +1,4 @@
 # Pandaral·lel
-A simple and efficient tool to parallelize your [pandas](https://pandas.pydata.org/) operations on all your CPUs.
 
  | Without parallelisation  | ![Without Pandarallel](https://github.com/nalepae/pandarallel/blob/master/docs/progress_apply.gif)       |
  | :----------------------: | -------------------------------------------------------------------------------------------------------- |
