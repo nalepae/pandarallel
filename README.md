@@ -62,8 +62,7 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
  For the `Dataframe.apply` example [here](https://github.com/nalepae/pandarallel/blob/master/docs/examples.ipynb), here is the comparative benchmark with "standard" `apply` and with `parallel_apply` (error bars are too small to be displayed).
  Computer used for this benchmark:
  - OS: Linux Ubuntu 16.04
- - Hardware: Intel Core i7 @ 3.40 GHz (4 cores)
- - Number of workers (parallel processes) used: 4
+ - Hardware: Intel Core i7 @ 3.40 GHz - 4 cores (8 threads)
 
  ![Benchmark](https://github.com/nalepae/pandarallel/blob/master/docs/apply_vs_parallel_apply.png)
 
@@ -103,3 +102,10 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
  | `series.map(func)`                                      | `series.parallel_map(func)`                                      |
  | `series.apply(func)`                                    | `series.parallel_apply(func)`                                    |
  | `series.rolling(args).apply(func)`                      | `series.rolling(args).parallel_apply(func)`                      |
+
+## Troubleshooting
+*I have 8 CPUs but `parallel_apply` speeds up computation only about x4. Why ?*
+
+Actually **Pandarallel** can only speed up computation until about the number of **cores** your computer has. The majority of recent CPUs (like Intel core-i7), uses hyperthreading. For example, a 4 cores hyperthreaded CPU will show 8 CPUs to the Operating System, but will **really** have only 4 physical computation units.
+
+On **Ubuntu**, you can get the number of cores with `$ grep -m 1 'cpu cores' /proc/cpuinfo`.
