@@ -65,7 +65,7 @@ Computer used for this benchmark:
 
  ![Benchmark](https://github.com/nalepae/pandarallel/blob/3d470139d409fc2cf61bab085298011fefe638c0/docs/standard_vs_parallel_4_cores.png)
 
- For those given examples, parallel operations runs approximatively 4x faster than the standard operations (except for `series.map` which runs only 3.2x faster).
+ For those given examples, parallel operations run approximatively 4x faster than the standard operations (except for `series.map` which runs only 3.2x faster).
 
 
  ## API
@@ -85,6 +85,7 @@ Computer used for this benchmark:
  - `nb_workers`: The number of workers. By default, it is set to the number
  of cores your operating system sees. (int)
  - `progress_bar`: Put it to `True` to display a progress bar.
+ 
  **WARNING**: Progress bar is an experimental feature. This can lead to a
  considerable performance loss.
  Not available for `DataFrameGroupy.parallel_apply`.
@@ -107,6 +108,6 @@ You will find a complete example [here](https://github.com/nalepae/pandarallel/b
 ## Troubleshooting
 *I have 8 CPUs but `parallel_apply` speeds up computation only about x4. Why ?*
 
-Actually **Pandarallel** can only speed up computation until about the number of **cores** your computer has. The majority of recent CPUs (like Intel core-i7), uses hyperthreading. For example, a 4 cores hyperthreaded CPU will show 8 CPUs to the Operating System, but will **really** have only 4 physical computation units.
+Actually **Pandarallel** can only speed up computation until about the number of **cores** your computer has. The majority of recent CPUs (like Intel core-i7) uses hyperthreading. For example, a 4 cores hyperthreaded CPU will show 8 CPUs to the Operating System, but will **really** have only 4 physical computation units.
 
 On **Ubuntu**, you can get the number of cores with `$ grep -m 1 'cpu cores' /proc/cpuinfo`.
