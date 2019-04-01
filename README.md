@@ -35,7 +35,6 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
 
 
 ## Warnings
-  - The V1.0 of this library is not yet released. API is able to change at any time.
   - Parallelization has a cost (instanciating new processes, transmitting data via shared memory, etc ...), so parallelization is efficiant only if the amount of computation to parallelize is high enough. For very little amount of data, using parallezation not always worth it.
   - Functions applied should NOT be lambda functions.
 
