@@ -423,7 +423,7 @@ class pandarallel:
         progress_bar : bool, optional
             Display a progress bar
             WARNING: Progress bar is an experimental feature.
-                     This can lead to a sensitive performance loss.
+                     This can lead to a considerable performance loss.
         """
 
         print(f"New pandarallel memory created - Size: {shm_size_mo} Mo")
@@ -431,7 +431,7 @@ class pandarallel:
 
         if progress_bar:
             print("WARNING: Progress bar is an experimental feature. This \
-can lead to a sensitive performance loss")
+can lead to a considerable performance loss.")
             tqdm_notebook().pandas()
 
         cls.__store_ctx = _plasma.start_plasma_store(int(shm_size_mo * 1e6))
