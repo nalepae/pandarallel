@@ -1,6 +1,5 @@
 # Pandaral·lel
-An easy to use library to speed up computation (by parallelizing on multi CPUs) with [pandas](https://pandas.pydata.org/).
-
+A simple and efficient tool to parallelize your [pandas](https://pandas.pydata.org/) operations on all your CPUs.
 
  | Without parallelisation  | ![Without Pandarallel](https://github.com/nalepae/pandarallel/blob/master/docs/progress_apply.gif)       |
  | :----------------------: | -------------------------------------------------------------------------------------------------------- |
@@ -35,7 +34,7 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
 
 
 ## Warnings
-  - Parallelization has a cost (instanciating new processes, transmitting data via shared memory, etc ...), so parallelization is efficiant only if the amount of computation to parallelize is high enough. For very little amount of data, using parallezation not always worth it.
+  - Parallelization has a cost (instanciating new processes, sending data via shared memory, etc ...), so parallelization is efficiant only if the amount of calculation to parallelize is high enough. For very little amount of data, using parallezation not always worth it.
   - Functions applied should NOT be lambda functions.
 
  ```python
@@ -58,14 +57,15 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
  An example of each API is available [here](https://github.com/nalepae/pandarallel/blob/master/docs/examples.ipynb).
 
  ## Benchmark
- For the `Dataframe.apply` example [here](https://github.com/nalepae/pandarallel/blob/master/docs/examples.ipynb), here is the comparative benchmark with "standard" `apply` and with `parallel_apply` (error bars are too small to be displayed).
- Computer used for this benchmark:
+ For [some examples](https://github.com/nalepae/pandarallel/blob/master/docs/examples.ipynb), here is the comparative benchmark with and without using Pandaral·lel.
+
+Computer used for this benchmark:
  - OS: Linux Ubuntu 16.04
  - Hardware: Intel Core i7 @ 3.40 GHz - 4 cores (8 threads)
 
- ![Benchmark](https://github.com/nalepae/pandarallel/blob/master/docs/apply_vs_parallel_apply.png)
+ ![Benchmark](https://github.com/nalepae/pandarallel/blob/3d470139d409fc2cf61bab085298011fefe638c0/docs/standard_vs_parallel_4_cores.png)
 
- For this given example, `parallel_apply` runs approximatively 3.7 faster than the "standard" `apply`.
+ For those given examples, parallel operations runs approximatively 4x faster than the standard operations (except for `series.map` which runs only 3.2x faster).
 
 
  ## API
@@ -101,6 +101,8 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
  | `series.map(func)`                                      | `series.parallel_map(func)`                                      |
  | `series.apply(func)`                                    | `series.parallel_apply(func)`                                    |
  | `series.rolling(args).apply(func)`                      | `series.rolling(args).parallel_apply(func)`                      |
+ 
+You will find a complete example [here](https://github.com/nalepae/pandarallel/blob/master/docs/examples.ipynb) for each line of this table.
 
 ## Troubleshooting
 *I have 8 CPUs but `parallel_apply` speeds up computation only about x4. Why ?*
