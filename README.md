@@ -91,15 +91,15 @@ An easy to use library to speed up computation (by parallelizing on multi CPUs) 
  sensitive performance loss.
  Not available for `DataFrameGroupy.parallel_apply`.
 
- With `df` a pandas DataFrame, `series` a pandas Series & `func` a function to
- apply/map:
+ With `df` a pandas DataFrame, `series` a pandas Series, `func` a function to
+ apply/map, `args1`, `args2` some arguments & `col_name` a column name:
 
- | Without parallelisation                            | With parallelisation                                        |
- | -------------------------------------------------- | ----------------------------------------------------------- |
- | `df.apply(func)`                                   | `df.parallel_apply(func)`                                   |
- | `df.applymap(func)`                                | `df.parallel_applymap(func)`                                |
- | `df.groupby(<args>).apply(func)`                   | `df.groupby(<args>).parallel_apply(func)`                   |
- | `series.map(func)`                                 | `series.parallel_map(func)`                                 |
- | `series.apply(func)`                               | `series.parallel_apply(func)`                               |
- | `series.rolling(<args>).apply(func)`               | `series.rolling(<args>).parallel_apply(func)`               |
- | `df.groupby(<args1>).rolling(<args2>).apply(func)` | `df.groupby(<args1>).rolling(<args2>).parallel_apply(func)` |
+ | Without parallelisation                                 | With parallelisation                                             |
+ | ------------------------------------------------------- | ---------------------------------------------------------------- |
+ | `df.apply(func)`                                        | `df.parallel_apply(func)`                                        |
+ | `df.applymap(func)`                                     | `df.parallel_applymap(func)`                                     |
+ | `df.groupby(args).apply(func)`                          | `df.groupby(args).parallel_apply(func)`                          |
+ | `df.groupby(args1).col_name.rolling(args2).apply(func)` | `df.groupby(args1).col_name.rolling(args2).parallel_apply(func)` |
+ | `series.map(func)`                                      | `series.parallel_map(func)`                                      |
+ | `series.apply(func)`                                    | `series.parallel_apply(func)`                                    |
+ | `series.rolling(args).apply(func)`                      | `series.rolling(args).parallel_apply(func)`                      |
