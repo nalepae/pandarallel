@@ -74,7 +74,7 @@ def _parallel(nb_workers, client):
                 return func(*args, **kwargs)
 
             except _PlasmaStoreFull:
-                msg = f"The pandarallel shared memory is too small to allow \
+                msg = "The pandarallel shared memory is too small to allow \
 parallel computation. \
 Just after pandarallel import, please write: \
 pandarallel.initialize(<size of memory in MB>), and retry."
@@ -426,8 +426,8 @@ class pandarallel:
                      This can lead to a considerable performance loss.
         """
 
-        print(f"New pandarallel memory created - Size: {shm_size_mb} MB")
-        print(f"Pandarallel will run on {nb_workers} workers")
+        print("New pandarallel memory created - Size:", shm_size_mb, "MB")
+        print("Pandarallel will run on", nb_workers, "workers")
 
         if progress_bar:
             print("WARNING: Progress bar is an experimental feature. This \

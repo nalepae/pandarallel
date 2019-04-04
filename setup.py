@@ -8,8 +8,8 @@ install_requires = [
 
 setup(
     name='pandarallel',
-    version='1.0.0',
-    python_requires='>=3.7',
+    version='1.1.0',
+    python_requires='>=3.5',
     packages=find_packages(),
     author='Manu NALEPA',
     author_email='nalepae@gmail.com',
