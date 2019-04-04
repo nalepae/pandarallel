@@ -28,8 +28,7 @@
 
 
 ## Requirements
- - [pandas](https://pypi.org/project/pandas/)
- - [pyarrow](https://pypi.org/project/pyarrow/)
+  - Linux or macOS (Windows is not supported at the moment)
 
 
 ## Warnings
@@ -110,3 +109,7 @@ You will find a complete example [here](https://github.com/nalepae/pandarallel/b
 Actually **Pandarallel** can only speed up computation until about the number of **cores** your computer has. The majority of recent CPUs (like Intel core-i7) uses hyperthreading. For example, a 4 cores hyperthreaded CPU will show 8 CPUs to the Operating System, but will **really** have only 4 physical computation units.
 
 On **Ubuntu**, you can get the number of cores with `$ grep -m 1 'cpu cores' /proc/cpuinfo`.
+
+*When I run `from pandarallel import pandarallel`, I get `ModuleNotFoundError: No module named 'pyarrow._plasma`. Why?*
+
+Are you using Windows? **Pandarallel** relies on the **Pyarrow Plasma** shared memory to work. Currently, **Pyarrow Plasma** works only on Linux & macOS (Windows in not supported). So sorry, but for now **Pandarallel** is supported only on Linux & macOS ...
