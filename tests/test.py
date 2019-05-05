@@ -2,7 +2,7 @@ import pytest
 
 from pandarallel import pandarallel
 
-import pandas as _pd
+import pandas as pd
 import numpy as np
 import math
 
@@ -40,7 +40,7 @@ def plasma_client():
 
 def test_dataframe_apply_axis_0(plasma_client):
     df_size = int(1e1)
-    df = _pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
+    df = pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
                         b=np.random.rand(df_size)))
 
     res = df.apply(func_for_dataframe_apply_axis_0)
@@ -49,7 +49,7 @@ def test_dataframe_apply_axis_0(plasma_client):
 
 def test_dataframe_apply_axis_1(plasma_client):
     df_size = int(1e1)
-    df = _pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
+    df = pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
                         b=np.random.rand(df_size)))
 
     res = df.apply(func_for_dataframe_apply_axis_1, axis=1)
@@ -58,7 +58,7 @@ def test_dataframe_apply_axis_1(plasma_client):
 
 def test_dataframe_applymap(plasma_client):
     df_size = int(1e1)
-    df = _pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
+    df = pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
                             b=np.random.rand(df_size)))
 
     res = df.applymap(func_for_dataframe_applymap)
@@ -67,7 +67,7 @@ def test_dataframe_applymap(plasma_client):
 
 def test_series_map(plasma_client):
     df_size = int(1e1)
-    df = _pd.DataFrame(dict(a=np.random.rand(df_size) + 1))
+    df = pd.DataFrame(dict(a=np.random.rand(df_size) + 1))
 
     res = df.a.map(func_for_series_map)
     res_parallel = df.a.parallel_map(func_for_series_map)
@@ -75,7 +75,7 @@ def test_series_map(plasma_client):
 
 def test_series_apply(plasma_client):
     df_size = int(1e1)
-    df = _pd.DataFrame(dict(a=np.random.rand(df_size) + 1))
+    df = pd.DataFrame(dict(a=np.random.rand(df_size) + 1))
 
     res = df.a.apply(func_for_series_apply, args=(2,), bias=3)
     res_parallel = df.a.parallel_apply(func_for_series_apply, args=(2,),
@@ -84,7 +84,7 @@ def test_series_apply(plasma_client):
 
 def test_series_rolling_apply(plasma_client):
     df_size = int(1e2)
-    df = _pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
+    df = pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
                       b=list(range(df_size))))
 
     res = df.b.rolling(4).apply(func_for_series_rolling_apply, raw=False)
@@ -95,7 +95,7 @@ def test_series_rolling_apply(plasma_client):
 
 def test_dataframe_groupby_apply(plasma_client):
     df_size = int(1e1)
-    df = _pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
+    df = pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
                            b=np.random.rand(df_size)))
 
     res = df.groupby("a").apply(func_for_dataframe_groupby_apply)
@@ -105,7 +105,7 @@ def test_dataframe_groupby_apply(plasma_client):
 
 def test_dataframe_groupby_rolling_apply(plasma_client):
     df_size = int(1e2)
-    df = _pd.DataFrame(dict(a=np.random.randint(1, 3, df_size),
+    df = pd.DataFrame(dict(a=np.random.randint(1, 3, df_size),
                             b=np.random.rand(df_size)))
 
     res = (df.groupby('a').b.rolling(4)

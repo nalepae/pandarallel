@@ -1,3 +1,3 @@
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
-from ._pandarallel import pandarallel
+from .pandarallel import pandarallel
