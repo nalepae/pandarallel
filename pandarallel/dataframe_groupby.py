@@ -35,12 +35,27 @@ class DataFrameGroupBy:
                     for chunk in chunks
                 ]
 
+            if len(df_grouped.grouper.shape) == 1:
+                # One element in "by" argument
+                if type(df_grouped.keys) == list:
+                    # "by" argument is a list with only one element
+                    keys = df_grouped.keys[0]
+                else:
+                    keys = df_grouped.keys
+
+                index = pd.Series(list(df_grouped.grouper),
+                                  name=keys)
+
+            else:
+                # A list in "by" argument
+                index = pd.MultiIndex.from_tuples(list(df_grouped.grouper),
+                                                  names=df_grouped.keys)
+
             result = pd.DataFrame(list(itertools.chain.from_iterable([
                                     plasma_client.get(future.result())
                                     for future in futures
                                    ])),
-                                   index=pd.Series(list(df_grouped.grouper),
-                                   name=df_grouped.keys)
+                                   index=index
                      ).squeeze()
             return result
         return closure

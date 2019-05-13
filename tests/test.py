@@ -96,10 +96,21 @@ def test_series_rolling_apply(plasma_client):
 def test_dataframe_groupby_apply(plasma_client):
     df_size = int(1e1)
     df = pd.DataFrame(dict(a=np.random.randint(1, 8, df_size),
-                           b=np.random.rand(df_size)))
+                           b=np.random.rand(df_size),
+                           c=np.random.rand(df_size)))
 
     res = df.groupby("a").apply(func_for_dataframe_groupby_apply)
     res_parallel = (df.groupby("a")
+                      .parallel_apply(func_for_dataframe_groupby_apply))
+    res.equals(res_parallel)
+
+    res = df.groupby(["a"]).apply(func_for_dataframe_groupby_apply)
+    res_parallel = (df.groupby(["a"])
+                      .parallel_apply(func_for_dataframe_groupby_apply))
+    res.equals(res_parallel)
+
+    res = df.groupby(["a", "b"]).apply(func_for_dataframe_groupby_apply)
+    res_parallel = (df.groupby(["a", "b"])
                       .parallel_apply(func_for_dataframe_groupby_apply))
     res.equals(res_parallel)
 
