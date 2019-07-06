@@ -2,6 +2,7 @@ import pandas as pd
 import pyarrow.plasma as plasma
 import multiprocessing as multiprocessing
 from tqdm._tqdm_notebook import tqdm_notebook as tqdm_notebook
+from tqdm import tqdm
 
 from .dataframe import DataFrame
 from .series import Series
@@ -16,7 +17,7 @@ PROGRESS_BAR = False
 class pandarallel:
     @classmethod
     def initialize(cls, shm_size_mb=SHM_SIZE_MB, nb_workers=NB_WORKERS,
-                   progress_bar=False):
+                   progress_bar=False, progress_bar_script=False):
         """
         Initialize Pandarallel shared memory.
 
@@ -37,10 +38,14 @@ class pandarallel:
         print("New pandarallel memory created - Size:", shm_size_mb, "MB")
         print("Pandarallel will run on", nb_workers, "workers")
 
-        if progress_bar:
+        if progress_bar or progress_bar_script:
             print("WARNING: Progress bar is an experimental feature. This \
 can lead to a considerable performance loss.")
-            tqdm_notebook().pandas()
+            if progress_bar_script:
+                tqdm.pandas()
+                progress_bar = progress_bar_script
+            else:
+                tqdm_notebook().pandas()
 
         cls.__store_ctx = plasma.start_plasma_store(int(shm_size_mb * 1e6))
         plasma_store_name, _ = cls.__store_ctx.__enter__()
