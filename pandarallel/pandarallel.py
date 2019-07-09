@@ -16,11 +16,27 @@ NB_WORKERS = multiprocessing.cpu_count()
 PROGRESS_BAR = False
 
 
+def is_jupyter_notebook_or_lab():
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            # Jupyter notebook/lab or qtconsole
+            return True
+        elif shell == 'TerminalInteractiveShell':
+            # Terminal running IPython
+            return False
+        else:
+            # Other type (?)
+            return False
+    except NameError:
+        # Probably standard Python interpreter
+        return False
+
+
 class pandarallel:
     @classmethod
     def initialize(cls, shm_size_mb=SHM_SIZE_MB, nb_workers=NB_WORKERS,
-                   progress_bar=False, progress_bar_script=False,
-                   verbose=2):
+                   progress_bar=False, verbose=2):
         """
         Initialize Pandarallel shared memory.
 
@@ -37,14 +53,13 @@ class pandarallel:
             WARNING: Progress bar is an experimental feature.
                      This can lead to a considerable performance loss.
         """
-        if progress_bar or progress_bar_script:
+        if progress_bar:
             print("WARNING: Progress bar is an experimental feature. This \
 can lead to a considerable performance loss.")
-            if progress_bar_script:
-                tqdm.pandas()
-                progress_bar = progress_bar_script
-            else:
+            if is_jupyter_notebook_or_lab():
                 tqdm_notebook().pandas()
+            else:
+                tqdm.pandas()
 
         verbose_store = verbose >= 2
 
