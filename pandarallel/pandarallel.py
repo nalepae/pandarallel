@@ -42,16 +42,21 @@ class pandarallel:
 
         Parameters
         ----------
-        shm_size_mb : int, optional
+        shm_size_mb: int, optional
             Size of Pandarallel shared memory
 
-        nb_workers : int, optional
+        nb_workers: int, optional
             Number of worker used for parallelisation
 
-        progress_bar : bool, optional
+        progress_bar: bool, optional
             Display a progress bar
             WARNING: Progress bar is an experimental feature.
                      This can lead to a considerable performance loss.
+
+        verbose: int, optional
+            If verbose >= 2, display all logs
+            If verbose == 1, display only initialization logs
+            If verbose < 1, display no log
         """
         if progress_bar:
             print("WARNING: Progress bar is an experimental feature. This \
