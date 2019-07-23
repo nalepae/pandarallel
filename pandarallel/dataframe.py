@@ -1,12 +1,15 @@
 import pyarrow.plasma as plasma
 import pandas as pd
-from concurrent.futures import ProcessPoolExecutor
+from pathos.multiprocessing import ProcessingPool
 from .utils import parallel, chunk
+
 
 class DataFrame:
     @staticmethod
-    def worker_apply(plasma_store_name, object_id,  axis_chunk, func,
-                     progress_bar, *args, **kwargs):
+    def worker_apply(worker_args):
+        (plasma_store_name, object_id, axis_chunk, func, progress_bar, args,
+         kwargs) = worker_args
+
         axis = kwargs.get("axis", 0)
         client = plasma.connect(plasma_store_name)
         df = client.get(object_id)
@@ -40,26 +43,25 @@ class DataFrame:
 
             object_id = plasma_client.put(df)
 
-            with ProcessPoolExecutor(max_workers=nb_workers) as executor:
-                futures = [
-                    executor.submit(DataFrame.worker_apply,
-                                    plasma_store_name, object_id,
-                                    chunk, func, progress_bar,
-                                    *args, **kwargs)
-                    for chunk in chunks
-                ]
+            workers_args = [(plasma_store_name, object_id, chunk, func,
+                            progress_bar, args, kwargs) for chunk in chunks]
+
+            with ProcessingPool(nb_workers) as pool:
+                result_workers = pool.map(DataFrame.worker_apply, workers_args)
 
             result = pd.concat([
-                                plasma_client.get(future.result())
-                                for future in futures
-                            ], copy=False)
+                plasma_client.get(result_worker)
+                for result_worker in result_workers
+            ], copy=False)
 
             return result
         return closure
 
     @staticmethod
-    def worker_applymap(plasma_store_name, object_id,  axis_chunk, func,
-                        progress_bar):
+    def worker_applymap(worker_args):
+        (plasma_store_name, object_id, axis_chunk, func,
+         progress_bar) = worker_args
+
         client = plasma.connect(plasma_store_name)
         df = client.get(object_id)
         applymap_func = "progress_applymap" if progress_bar else "applymap"
@@ -80,18 +82,18 @@ class DataFrame:
             chunks = chunk(df.shape[0], nb_workers)
             object_id = plasma_client.put(df)
 
-            with ProcessPoolExecutor(max_workers=nb_workers) as executor:
-                futures = [
-                    executor.submit(DataFrame.worker_applymap,
-                                    plasma_store_name, object_id,
-                                    chunk, func, progress_bar)
-                    for index, chunk in enumerate(chunks)
-                ]
+            worker_args = [(plasma_store_name, object_id, chunk, func,
+                            progress_bar)
+                           for chunk in chunks]
+
+            with ProcessingPool(nb_workers) as pool:
+                result_workers = pool.map(DataFrame.worker_applymap,
+                                          worker_args)
 
             result = pd.concat([
-                                plasma_client.get(future.result())
-                                for future in futures
-                            ], copy=False)
+                plasma_client.get(result_worker)
+                for result_worker in result_workers
+            ], copy=False)
 
             return result
         return closure

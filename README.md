@@ -31,26 +31,9 @@
 
 - Linux or macOS (Windows is not supported at the moment)
 
-## Warnings
+## Warning
 
 - Parallelization has a cost (instanciating new processes, sending data via shared memory, etc ...), so parallelization is efficiant only if the amount of calculation to parallelize is high enough. For very little amount of data, using parallezation not always worth it.
-- Functions applied should NOT be lambda functions.
-
-```python
-from pandarallel import pandarallel
-from math import sin
-
-pandarallel.initialize()
-
-# FORBIDDEN
-df.parallel_apply(lambda x: sin(x**2), axis=1)
-
-# ALLOWED
-def func(x):
-    return sin(x**2)
-
-df.parallel_apply(func, axis=1)
-```
 
 ## Examples
 

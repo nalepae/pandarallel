@@ -1,12 +1,15 @@
 import pyarrow.plasma as plasma
 import pandas as pd
-from concurrent.futures import ProcessPoolExecutor
+from pathos.multiprocessing import ProcessingPool
 from .utils import parallel, chunk
+
 
 class RollingGroupby:
     @staticmethod
-    def worker(plasma_store_name, object_id, groups_id, attribute2value, chunk,
-               func, *args, **kwargs):
+    def worker(worker_args):
+        (plasma_store_name, object_id, groups_id, attribute2value, chunk,
+         func, args, kwargs) = worker_args
+
         client = plasma.connect(plasma_store_name)
         df = client.get(object_id)
         groups = client.get(groups_id)[chunk]
@@ -34,18 +37,17 @@ class RollingGroupby:
             attribute2value = {attribute: getattr(rolling_groupby, attribute)
                                for attribute in rolling_groupby._attributes}
 
-            with ProcessPoolExecutor(max_workers=nb_workers) as executor:
-                futures = [
-                    executor.submit(RollingGroupby.worker, plasma_store_name,
-                                    object_id, groups_id, attribute2value,
-                                    chunk, func, *args, **kwargs)
-                    for chunk in chunks
-                ]
+            worker_args = [(plasma_store_name, object_id, groups_id,
+                            attribute2value, chunk, func, args, kwargs)
+                           for chunk in chunks]
+
+            with ProcessingPool(nb_workers) as pool:
+                result_workers = pool.map(RollingGroupby.worker, worker_args)
 
             result = pd.concat([
-                                plasma_client.get(future.result())
-                                for future in futures
-                            ], copy=False)
+                plasma_client.get(result_worker)
+                for result_worker in result_workers
+            ], copy=False)
 
             return result
         return closure

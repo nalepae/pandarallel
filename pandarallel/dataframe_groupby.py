@@ -1,19 +1,22 @@
 import pyarrow.plasma as plasma
 import pandas as pd
 import itertools
-from concurrent.futures import ProcessPoolExecutor
+from pathos.multiprocessing import ProcessingPool
 from .utils import parallel, chunk
+
 
 class DataFrameGroupBy:
     @staticmethod
-    def worker(plasma_store_name, object_id, groups_id, chunk,
-               func, *args, **kwargs):
+    def worker(worker_args):
+        (plasma_store_name, object_id, groups_id, chunk, func, args,
+         kwargs) = worker_args
+
         client = plasma.connect(plasma_store_name)
         df = client.get(object_id)
         groups = client.get(groups_id)[chunk]
         result = [
-                    func(df.iloc[indexes], *args, **kwargs)
-                    for _, indexes in groups
+            func(df.iloc[indexes], *args, **kwargs)
+            for _, indexes in groups
         ]
 
         return client.put(result)
@@ -27,13 +30,12 @@ class DataFrameGroupBy:
             object_id = plasma_client.put(df_grouped.obj)
             groups_id = plasma_client.put(groups)
 
-            with ProcessPoolExecutor(max_workers=nb_workers) as executor:
-                futures = [
-                    executor.submit(DataFrameGroupBy.worker,
-                                    plasma_store_name, object_id,
-                                    groups_id, chunk, func, *args, **kwargs)
-                    for chunk in chunks
-                ]
+            workers_args = [(plasma_store_name, object_id, groups_id, chunk,
+                             func, args, kwargs) for chunk in chunks]
+
+            with ProcessingPool(nb_workers) as pool:
+                result_workers = pool.map(
+                    DataFrameGroupBy.worker, workers_args)
 
             if len(df_grouped.grouper.shape) == 1:
                 # One element in "by" argument
@@ -52,10 +54,10 @@ class DataFrameGroupBy:
                                                   names=df_grouped.keys)
 
             result = pd.DataFrame(list(itertools.chain.from_iterable([
-                                    plasma_client.get(future.result())
-                                    for future in futures
-                                   ])),
-                                   index=index
-                     ).squeeze()
+                plasma_client.get(result_worker)
+                for result_worker in result_workers
+            ])),
+                index=index
+            ).squeeze()
             return result
         return closure
