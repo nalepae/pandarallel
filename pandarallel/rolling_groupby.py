@@ -26,7 +26,7 @@ class RollingGroupby:
         return client.put(pd.concat(results))
 
     @staticmethod
-    def apply(plasma_store_name, nb_workers, plasma_client):
+    def apply(plasma_store_name, nb_workers, plasma_client, _1, _2):
         @parallel(plasma_client)
         def closure(rolling_groupby, func, *args, **kwargs):
             groups = list(rolling_groupby._groupby.groups.items())

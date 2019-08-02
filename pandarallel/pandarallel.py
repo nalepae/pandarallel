@@ -1,8 +1,6 @@
 import pandas as pd
 import pyarrow.plasma as plasma
 import multiprocessing as multiprocessing
-from tqdm._tqdm_notebook import tqdm_notebook as tqdm_notebook
-from tqdm import tqdm
 
 from .dataframe import DataFrame
 from .series import Series
@@ -16,7 +14,7 @@ NB_WORKERS = multiprocessing.cpu_count()
 PROGRESS_BAR = False
 
 
-def is_jupyter_notebook_or_lab():
+def is_notebook_lab():
     try:
         shell = get_ipython().__class__.__name__
         if shell == 'ZMQInteractiveShell':
@@ -51,7 +49,7 @@ class pandarallel:
         progress_bar: bool, optional
             Display a progress bar
             WARNING: Progress bar is an experimental feature.
-                     This can lead to a considerable performance loss.
+                        This can lead to a considerable performance loss.
 
         verbose: int, optional
             If verbose >= 2, display all logs
@@ -61,12 +59,10 @@ class pandarallel:
         if progress_bar:
             print("WARNING: Progress bar is an experimental feature. This \
 can lead to a considerable performance loss.")
-            if is_jupyter_notebook_or_lab():
-                tqdm_notebook().pandas()
-            else:
-                tqdm.pandas()
 
         verbose_store = verbose >= 2
+
+        i_am_in_notebook_lab = is_notebook_lab()
 
         if hasattr(cls, "proc"):
             cls.proc.kill()
@@ -80,20 +76,19 @@ can lead to a considerable performance loss.")
 
         plasma_client = plasma.connect(plasma_store_name)
 
-        args = plasma_store_name, nb_workers, plasma_client
+        args = (plasma_store_name, nb_workers, plasma_client, progress_bar,
+                i_am_in_notebook_lab)
 
-        pd.DataFrame.parallel_apply = DataFrame.apply(*args, progress_bar)
-        pd.DataFrame.parallel_applymap = DataFrame.applymap(
-            *args, progress_bar)
+        pd.DataFrame.parallel_apply = DataFrame.apply(*args)
+        pd.DataFrame.parallel_applymap = DataFrame.applymap(*args)
 
-        pd.Series.parallel_map = Series.map(*args, progress_bar)
-        pd.Series.parallel_apply = Series.apply(*args, progress_bar)
+        pd.Series.parallel_map = Series.map(*args)
+        pd.Series.parallel_apply = Series.apply(*args)
 
-        pd.core.window.Rolling.parallel_apply = SeriesRolling.apply(
-            *args, progress_bar)
+        pd.core.window.Rolling.parallel_apply = SeriesRolling.apply(*args)
 
-        pd.core.groupby.DataFrameGroupBy.parallel_apply = DataFrameGroupBy.apply(
-            *args)
+        dfgb_a = DataFrameGroupBy.apply(*args)
+        pd.core.groupby.DataFrameGroupBy.parallel_apply = dfgb_a
 
-        pd.core.window.RollingGroupby.parallel_apply = RollingGroupby.apply(
-            *args)
+        rgb_a = RollingGroupby.apply(*args)
+        pd.core.window.RollingGroupby.parallel_apply = rgb_a

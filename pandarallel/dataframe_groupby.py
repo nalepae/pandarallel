@@ -22,7 +22,7 @@ class DataFrameGroupBy:
         return client.put(result)
 
     @staticmethod
-    def apply(plasma_store_name, nb_workers, plasma_client):
+    def apply(plasma_store_name, nb_workers, plasma_client, _1, _2):
         @parallel(plasma_client)
         def closure(df_grouped, func, *args, **kwargs):
             groups = list(df_grouped.groups.items())

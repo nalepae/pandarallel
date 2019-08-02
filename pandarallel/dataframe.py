@@ -1,37 +1,68 @@
+from time import time_ns
+from ctypes import c_int64
+from multiprocessing import Manager
 import pyarrow.plasma as plasma
 import pandas as pd
 from pathos.multiprocessing import ProcessingPool
-from .utils import parallel, chunk
+from .utils import (parallel, chunk, ProgressBarsConsole,
+                    ProgressBarsNotebookLab)
+
+REFRESH_PROGRESS_TIME = int(2.5e8)  # 250 ms
 
 
 class DataFrame:
     @staticmethod
     def worker_apply(worker_args):
-        (plasma_store_name, object_id, axis_chunk, func, progress_bar, args,
-         kwargs) = worker_args
+        (plasma_store_name, object_id, axis_chunk, func, progress_bar, queue,
+         index, args, kwargs) = worker_args
 
-        axis = kwargs.get("axis", 0)
         client = plasma.connect(plasma_store_name)
         df = client.get(object_id)
-        apply_func = "progress_apply" if progress_bar else "apply"
+
+        counter = c_int64(0)
+        last_push_time_ns = c_int64(time_ns())
+
+        def with_progress(func):
+            def decorator(*args, **kwargs):
+                counter.value += 1
+
+                current_time_ns = time_ns()
+                delta = current_time_ns - last_push_time_ns.value
+
+                if delta >= REFRESH_PROGRESS_TIME:
+                    queue.put_nowait((index, counter.value, False))
+                    last_push_time_ns.value = current_time_ns
+
+                return func(*args, **kwargs)
+
+            return decorator
+
+        axis = kwargs.get("axis", 0)
+        func_to_apply = with_progress(func) if progress_bar else func
 
         if axis == 1:
-            if progress_bar:
-                # This following print is a workaround for this issue:
-                # https://github.com/tqdm/tqdm/issues/485
-                print(' ', end='', flush=True)
-            res = getattr(df[axis_chunk], apply_func)(func, *args, **kwargs)
+            res = df[axis_chunk].apply(func_to_apply, *args, **kwargs)
         else:
             chunk = slice(0, df.shape[0]), df.columns[axis_chunk]
-            res = getattr(df.loc[chunk], apply_func)(func, *args, **kwargs)
+            res = df.loc[chunk].apply(func_to_apply, *args, **kwargs)
+
+        if progress_bar:
+            queue.put((index, counter.value, True))
 
         return client.put(res)
 
     @staticmethod
     def apply(plasma_store_name, nb_workers, plasma_client,
-              progress_bar=False):
+              display_progress_bar, in_notebook_lab):
         @parallel(plasma_client)
         def closure(df, func, *args, **kwargs):
+            pool = ProcessingPool(nb_workers)
+            manager = Manager()
+            queue = manager.Queue()
+
+            ProgressBars = (ProgressBarsNotebookLab if in_notebook_lab
+                            else ProgressBarsConsole)
+
             axis = kwargs.get("axis", 0)
             if axis == 'index':
                 axis = 0
@@ -41,17 +72,33 @@ class DataFrame:
             opposite_axis = 1 - axis
             chunks = chunk(df.shape[opposite_axis], nb_workers)
 
+            maxs = [chunk.stop - chunk.start for chunk in chunks]
+            values = [0] * nb_workers
+            finished = [False] * nb_workers
+
+            if display_progress_bar:
+                progress_bar = ProgressBars(maxs)
+
             object_id = plasma_client.put(df)
 
             workers_args = [(plasma_store_name, object_id, chunk, func,
-                            progress_bar, args, kwargs) for chunk in chunks]
+                             display_progress_bar, queue, index, args, kwargs)
+                            for index, chunk in enumerate(chunks)]
 
-            with ProcessingPool(nb_workers) as pool:
-                result_workers = pool.map(DataFrame.worker_apply, workers_args)
+            result_workers = pool.amap(DataFrame.worker_apply, workers_args)
+
+            if display_progress_bar:
+                while not all(finished):
+                    for _ in range(finished.count(False)):
+                        index, value, status = queue.get()
+                        values[index] = value
+                        finished[index] = status
+
+                    progress_bar.update(values)
 
             result = pd.concat([
                 plasma_client.get(result_worker)
-                for result_worker in result_workers
+                for result_worker in result_workers.get()
             ], copy=False)
 
             return result
@@ -60,39 +107,84 @@ class DataFrame:
     @staticmethod
     def worker_applymap(worker_args):
         (plasma_store_name, object_id, axis_chunk, func,
-         progress_bar) = worker_args
+         progress_bar, queue, index) = worker_args
 
         client = plasma.connect(plasma_store_name)
         df = client.get(object_id)
-        applymap_func = "progress_applymap" if progress_bar else "applymap"
+        nb_columns_1 = df.shape[1] + 1
+
+        counter = c_int64(0)
+        last_push_time_ns = c_int64(time_ns())
+
+        def with_progress(func):
+            def decorator(arg):
+                counter.value += 1
+
+                current_time_ns = time_ns()
+                delta = current_time_ns - last_push_time_ns.value
+
+                if(delta >= REFRESH_PROGRESS_TIME):
+                    if(counter.value % nb_columns_1 == 0):
+                        queue.put_nowait((index,
+                                          counter.value // nb_columns_1,
+                                          False))
+                        last_push_time_ns.value = current_time_ns
+
+                return func(arg)
+
+            return decorator
+
+        func_to_apply = with_progress(func) if progress_bar else func
+
+        res = df[axis_chunk].applymap(func_to_apply)
 
         if progress_bar:
-            # This following print is a workaround for this issue:
-            # https://github.com/tqdm/tqdm/issues/485
-            print(' ', end='', flush=True)
-        res = getattr(df[axis_chunk], applymap_func)(func)
+            row_counter = counter.value // nb_columns_1
+            queue.put((index, row_counter, True))
 
         return client.put(res)
 
     @staticmethod
     def applymap(plasma_store_name, nb_workers, plasma_client,
-                 progress_bar=False):
+                 display_progress_bar, in_notebook_lab):
         @parallel(plasma_client)
         def closure(df, func):
+            pool = ProcessingPool(nb_workers)
+            manager = Manager()
+            queue = manager.Queue()
+
+            ProgressBars = (ProgressBarsNotebookLab if in_notebook_lab
+                            else ProgressBarsConsole)
+
             chunks = chunk(df.shape[0], nb_workers)
+
+            maxs = [chunk.stop - chunk.start for chunk in chunks]
+            values = [0] * nb_workers
+            finished = [False] * nb_workers
+
+            if display_progress_bar:
+                progress_bar = ProgressBars(maxs)
+
             object_id = plasma_client.put(df)
 
             worker_args = [(plasma_store_name, object_id, chunk, func,
-                            progress_bar)
-                           for chunk in chunks]
+                            display_progress_bar, queue, index)
+                           for index, chunk in enumerate(chunks)]
 
-            with ProcessingPool(nb_workers) as pool:
-                result_workers = pool.map(DataFrame.worker_applymap,
-                                          worker_args)
+            result_workers = pool.amap(DataFrame.worker_applymap, worker_args)
+
+            if display_progress_bar:
+                while not all(finished):
+                    for _ in range(finished.count(False)):
+                        index, value, status = queue.get()
+                        values[index] = value
+                        finished[index] = status
+
+                    progress_bar.update(values)
 
             result = pd.concat([
                 plasma_client.get(result_worker)
-                for result_worker in result_workers
+                for result_worker in result_workers.get()
             ], copy=False)
 
             return result
