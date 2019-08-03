@@ -1,5 +1,5 @@
-from time import time_ns
-from ctypes import c_int64
+from time import time
+from ctypes import c_double, c_uint64
 from multiprocessing import Manager
 import pyarrow.plasma as plasma
 import pandas as pd
@@ -7,7 +7,7 @@ from pathos.multiprocessing import ProcessingPool
 from .utils import (parallel, chunk, ProgressBarsConsole,
                     ProgressBarsNotebookLab)
 
-REFRESH_PROGRESS_TIME = int(2.5e8)  # 250 ms
+REFRESH_PROGRESS_TIME = 0.25  # s
 
 
 class DataFrame:
@@ -19,19 +19,18 @@ class DataFrame:
         client = plasma.connect(plasma_store_name)
         df = client.get(object_id)
 
-        counter = c_int64(0)
-        last_push_time_ns = c_int64(time_ns())
+        counter = c_uint64(0)
+        last_push_time = c_double(time())
 
         def with_progress(func):
             def decorator(*args, **kwargs):
                 counter.value += 1
 
-                current_time_ns = time_ns()
-                delta = current_time_ns - last_push_time_ns.value
+                cur_time = time()
 
-                if delta >= REFRESH_PROGRESS_TIME:
+                if cur_time - last_push_time.value >= REFRESH_PROGRESS_TIME:
                     queue.put_nowait((index, counter.value, False))
-                    last_push_time_ns.value = current_time_ns
+                    last_push_time.value = cur_time
 
                 return func(*args, **kwargs)
 
@@ -113,22 +112,21 @@ class DataFrame:
         df = client.get(object_id)
         nb_columns_1 = df.shape[1] + 1
 
-        counter = c_int64(0)
-        last_push_time_ns = c_int64(time_ns())
+        counter = c_uint64(0)
+        last_push_time = c_double(time())
 
         def with_progress(func):
             def decorator(arg):
                 counter.value += 1
 
-                current_time_ns = time_ns()
-                delta = current_time_ns - last_push_time_ns.value
+                cur_time = time()
 
-                if(delta >= REFRESH_PROGRESS_TIME):
+                if(cur_time - last_push_time.value >= REFRESH_PROGRESS_TIME):
                     if(counter.value % nb_columns_1 == 0):
                         queue.put_nowait((index,
                                           counter.value // nb_columns_1,
                                           False))
-                        last_push_time_ns.value = current_time_ns
+                        last_push_time.value = cur_time
 
                 return func(arg)
 
