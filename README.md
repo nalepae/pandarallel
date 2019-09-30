@@ -25,7 +25,7 @@
 
 ## Installation
 
-`$ pip install pandarallel [--user]`
+`$ pip install pandarallel -U [--user]`
 
 ## Requirements
 
