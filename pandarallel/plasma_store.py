@@ -11,7 +11,14 @@ def start_plasma_store(plasma_store_memory, verbose=True):
     tmpdir = tempfile.mkdtemp(prefix=PREFIX_TEMPFILE)
 
     plasma_store_name = os.path.join(tmpdir, "plasma_sock")
-    plasma_store_executable = os.path.join(PLASMA_DIR, "plasma_store_server")
+
+    # Pyarrow version > 0.14
+    plasma_store_executable = os.path.join(PLASMA_DIR, "plasma-store-server")
+
+    if not os.path.exists(plasma_store_executable):
+        # Pyarrow version <= 0.14
+        plasma_store_executable = os.path.join(PLASMA_DIR,
+                                               "plasma_store_server")
 
     command = [plasma_store_executable,
                "-s", plasma_store_name,

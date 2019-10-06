@@ -7,7 +7,12 @@ from IPython.display import display
 
 import itertools as _itertools
 
-from pyarrow.lib import PlasmaStoreFull as _PlasmaStoreFull
+try:
+    # Pyarrow version > 0.14
+    from pyarrow.plasma import PlasmaStoreFull as _PlasmaStoreFull
+except ImportError:
+    # Pyarrow version <= 0.14
+    from pyarrow.lib import PlasmaStoreFull as _PlasmaStoreFull
 
 MINIMUM_TERMINAL_WIDTH = 72
 
