@@ -12,7 +12,7 @@ try:
     from pyarrow.plasma import PlasmaStoreFull as _PlasmaStoreFull
 except ImportError:
     # Pyarrow version <= 0.14
-    from pyarrow.lib import PlasmaStoreFull as _PlasmaStoreFull
+    from pyarrow.lib import  PlasmaStoreFull as _PlasmaStoreFull
 
 MINIMUM_TERMINAL_WIDTH = 72
 

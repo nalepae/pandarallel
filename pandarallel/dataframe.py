@@ -4,8 +4,7 @@ from multiprocessing import Manager
 import pyarrow.plasma as plasma
 import pandas as pd
 from pathos.multiprocessing import ProcessingPool
-from .utils import (parallel, chunk, ProgressBarsConsole,
-                    ProgressBarsNotebookLab)
+from .utils import parallel, chunk, ProgressBarsConsole, ProgressBarsNotebookLab
 
 REFRESH_PROGRESS_TIME = 0.25  # s
 
@@ -13,8 +12,17 @@ REFRESH_PROGRESS_TIME = 0.25  # s
 class DataFrame:
     @staticmethod
     def worker_apply(worker_args):
-        (plasma_store_name, object_id, axis_chunk, func, progress_bar, queue,
-         index, args, kwargs) = worker_args
+        (
+            plasma_store_name,
+            object_id,
+            axis_chunk,
+            func,
+            progress_bar,
+            queue,
+            index,
+            args,
+            kwargs,
+        ) = worker_args
 
         client = plasma.connect(plasma_store_name)
         df = client.get(object_id)
@@ -51,21 +59,27 @@ class DataFrame:
         return client.put(res)
 
     @staticmethod
-    def apply(plasma_store_name, nb_workers, plasma_client,
-              display_progress_bar, in_notebook_lab):
+    def apply(
+        plasma_store_name,
+        nb_workers,
+        plasma_client,
+        display_progress_bar,
+        in_notebook_lab,
+    ):
         @parallel(plasma_client)
         def closure(df, func, *args, **kwargs):
             pool = ProcessingPool(nb_workers)
             manager = Manager()
             queue = manager.Queue()
 
-            ProgressBars = (ProgressBarsNotebookLab if in_notebook_lab
-                            else ProgressBarsConsole)
+            ProgressBars = (
+                ProgressBarsNotebookLab if in_notebook_lab else ProgressBarsConsole
+            )
 
             axis = kwargs.get("axis", 0)
-            if axis == 'index':
+            if axis == "index":
                 axis = 0
-            elif axis == 'columns':
+            elif axis == "columns":
                 axis = 1
 
             opposite_axis = 1 - axis
@@ -80,9 +94,20 @@ class DataFrame:
 
             object_id = plasma_client.put(df)
 
-            workers_args = [(plasma_store_name, object_id, chunk, func,
-                             display_progress_bar, queue, index, args, kwargs)
-                            for index, chunk in enumerate(chunks)]
+            workers_args = [
+                (
+                    plasma_store_name,
+                    object_id,
+                    chunk,
+                    func,
+                    display_progress_bar,
+                    queue,
+                    index,
+                    args,
+                    kwargs,
+                )
+                for index, chunk in enumerate(chunks)
+            ]
 
             result_workers = pool.amap(DataFrame.worker_apply, workers_args)
 
@@ -95,18 +120,29 @@ class DataFrame:
 
                     progress_bar.update(values)
 
-            result = pd.concat([
-                plasma_client.get(result_worker)
-                for result_worker in result_workers.get()
-            ], copy=False)
+            result = pd.concat(
+                [
+                    plasma_client.get(result_worker)
+                    for result_worker in result_workers.get()
+                ],
+                copy=False,
+            )
 
             return result
+
         return closure
 
     @staticmethod
     def worker_applymap(worker_args):
-        (plasma_store_name, object_id, axis_chunk, func,
-         progress_bar, queue, index) = worker_args
+        (
+            plasma_store_name,
+            object_id,
+            axis_chunk,
+            func,
+            progress_bar,
+            queue,
+            index,
+        ) = worker_args
 
         client = plasma.connect(plasma_store_name)
         df = client.get(object_id)
@@ -121,11 +157,9 @@ class DataFrame:
 
                 cur_time = time()
 
-                if(cur_time - last_push_time.value >= REFRESH_PROGRESS_TIME):
-                    if(counter.value % nb_columns_1 == 0):
-                        queue.put_nowait((index,
-                                          counter.value // nb_columns_1,
-                                          False))
+                if cur_time - last_push_time.value >= REFRESH_PROGRESS_TIME:
+                    if counter.value % nb_columns_1 == 0:
+                        queue.put_nowait((index, counter.value // nb_columns_1, False))
                         last_push_time.value = cur_time
 
                 return func(arg)
@@ -143,16 +177,22 @@ class DataFrame:
         return client.put(res)
 
     @staticmethod
-    def applymap(plasma_store_name, nb_workers, plasma_client,
-                 display_progress_bar, in_notebook_lab):
+    def applymap(
+        plasma_store_name,
+        nb_workers,
+        plasma_client,
+        display_progress_bar,
+        in_notebook_lab,
+    ):
         @parallel(plasma_client)
         def closure(df, func):
             pool = ProcessingPool(nb_workers)
             manager = Manager()
             queue = manager.Queue()
 
-            ProgressBars = (ProgressBarsNotebookLab if in_notebook_lab
-                            else ProgressBarsConsole)
+            ProgressBars = (
+                ProgressBarsNotebookLab if in_notebook_lab else ProgressBarsConsole
+            )
 
             chunks = chunk(df.shape[0], nb_workers)
 
@@ -165,9 +205,18 @@ class DataFrame:
 
             object_id = plasma_client.put(df)
 
-            worker_args = [(plasma_store_name, object_id, chunk, func,
-                            display_progress_bar, queue, index)
-                           for index, chunk in enumerate(chunks)]
+            worker_args = [
+                (
+                    plasma_store_name,
+                    object_id,
+                    chunk,
+                    func,
+                    display_progress_bar,
+                    queue,
+                    index,
+                )
+                for index, chunk in enumerate(chunks)
+            ]
 
             result_workers = pool.amap(DataFrame.worker_applymap, worker_args)
 
@@ -180,10 +229,14 @@ class DataFrame:
 
                     progress_bar.update(values)
 
-            result = pd.concat([
-                plasma_client.get(result_worker)
-                for result_worker in result_workers.get()
-            ], copy=False)
+            result = pd.concat(
+                [
+                    plasma_client.get(result_worker)
+                    for result_worker in result_workers.get()
+                ],
+                copy=False,
+            )
 
             return result
+
         return closure

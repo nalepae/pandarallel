@@ -13,7 +13,7 @@ REFRESH_PROGRESS_TIME = 0.25  # s
 class Series:
     @staticmethod
     def worker_map(worker_args):
-        (plasma_store_name, object_id, chunk, func, progress_bar, queue, index,
+        (plasma_store_name,  object_id, chunk, func, progress_bar, queue, index,
          kwargs) = worker_args
 
         client = plasma.connect(plasma_store_name)

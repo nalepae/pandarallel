@@ -17,10 +17,10 @@ PROGRESS_BAR = False
 def is_notebook_lab():
     try:
         shell = get_ipython().__class__.__name__
-        if shell == 'ZMQInteractiveShell':
+        if shell == "ZMQInteractiveShell":
             # Jupyter notebook/lab or qtconsole
             return True
-        elif shell == 'TerminalInteractiveShell':
+        elif shell == "TerminalInteractiveShell":
             # Terminal running IPython
             return False
         else:
@@ -33,8 +33,13 @@ def is_notebook_lab():
 
 class pandarallel:
     @classmethod
-    def initialize(cls, shm_size_mb=SHM_SIZE_MB, nb_workers=NB_WORKERS,
-                   progress_bar=False, verbose=2):
+    def initialize(
+        cls,
+        shm_size_mb=SHM_SIZE_MB,
+        nb_workers=NB_WORKERS,
+        progress_bar=False,
+        verbose=2,
+    ):
         """
         Initialize Pandarallel shared memory.
 
@@ -57,8 +62,10 @@ class pandarallel:
             If verbose < 1, display no log
         """
         if progress_bar:
-            print("WARNING: Progress bar is an experimental feature. This \
-can lead to a considerable performance loss.")
+            print(
+                "WARNING: Progress bar is an experimental feature. This \
+can lead to a considerable performance loss."
+            )
 
         verbose_store = verbose >= 2
 
@@ -71,13 +78,19 @@ can lead to a considerable performance loss.")
             print("New pandarallel memory created - Size:", shm_size_mb, "MB")
             print("Pandarallel will run on", nb_workers, "workers")
 
-        plasma_store_name, cls.proc = start_plasma_store(int(shm_size_mb * 1e6),
-                                                         verbose=verbose_store)
+        plasma_store_name, cls.proc = start_plasma_store(
+            int(shm_size_mb * 1e6), verbose=verbose_store
+        )
 
         plasma_client = plasma.connect(plasma_store_name)
 
-        args = (plasma_store_name, nb_workers, plasma_client, progress_bar,
-                i_am_in_notebook_lab)
+        args = (
+            plasma_store_name,
+            nb_workers,
+            plasma_client,
+            progress_bar,
+            i_am_in_notebook_lab,
+        )
 
         pd.DataFrame.parallel_apply = DataFrame.apply(*args)
         pd.DataFrame.parallel_applymap = DataFrame.applymap(*args)

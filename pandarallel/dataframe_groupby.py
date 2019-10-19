@@ -8,16 +8,20 @@ from .utils import parallel, chunk
 class DataFrameGroupBy:
     @staticmethod
     def worker(worker_args):
-        (plasma_store_name, object_id, groups_id, chunk, func, args,
-         kwargs) = worker_args
+        (
+            plasma_store_name,
+            object_id,
+            groups_id,
+            chunk,
+            func,
+            args,
+            kwargs,
+        ) = worker_args
 
         client = plasma.connect(plasma_store_name)
         df = client.get(object_id)
         groups = client.get(groups_id)[chunk]
-        result = [
-            func(df.iloc[indexes], *args, **kwargs)
-            for _, indexes in groups
-        ]
+        result = [func(df.iloc[indexes], *args, **kwargs) for _, indexes in groups]
 
         return client.put(result)
 
@@ -30,12 +34,13 @@ class DataFrameGroupBy:
             object_id = plasma_client.put(df_grouped.obj)
             groups_id = plasma_client.put(groups)
 
-            workers_args = [(plasma_store_name, object_id, groups_id, chunk,
-                             func, args, kwargs) for chunk in chunks]
+            workers_args = [
+                (plasma_store_name, object_id, groups_id, chunk, func, args, kwargs)
+                for chunk in chunks
+            ]
 
             with ProcessingPool(nb_workers) as pool:
-                result_workers = pool.map(
-                    DataFrameGroupBy.worker, workers_args)
+                result_workers = pool.map(DataFrameGroupBy.worker, workers_args)
 
             if len(df_grouped.grouper.shape) == 1:
                 # One element in "by" argument
@@ -45,19 +50,25 @@ class DataFrameGroupBy:
                 else:
                     keys = df_grouped.keys
 
-                index = pd.Series(list(df_grouped.grouper),
-                                  name=keys)
+                index = pd.Series(list(df_grouped.grouper), name=keys)
 
             else:
                 # A list in "by" argument
-                index = pd.MultiIndex.from_tuples(list(df_grouped.grouper),
-                                                  names=df_grouped.keys)
+                index = pd.MultiIndex.from_tuples(
+                    list(df_grouped.grouper), names=df_grouped.keys
+                )
 
-            result = pd.DataFrame(list(itertools.chain.from_iterable([
-                plasma_client.get(result_worker)
-                for result_worker in result_workers
-            ])),
-                index=index
+            result = pd.DataFrame(
+                list(
+                    itertools.chain.from_iterable(
+                        [
+                            plasma_client.get(result_worker)
+                            for result_worker in result_workers
+                        ]
+                    )
+                ),
+                index=index,
             ).squeeze()
             return result
+
         return closure

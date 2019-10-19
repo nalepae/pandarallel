@@ -17,12 +17,15 @@ def start_plasma_store(plasma_store_memory, verbose=True):
 
     if not os.path.exists(plasma_store_executable):
         # Pyarrow version <= 0.14
-        plasma_store_executable = os.path.join(PLASMA_DIR,
-                                               "plasma_store_server")
+        plasma_store_executable = os.path.join(PLASMA_DIR, "plasma_store_server")
 
-    command = [plasma_store_executable,
-               "-s", plasma_store_name,
-               "-m", str(plasma_store_memory)]
+    command = [
+        plasma_store_executable,
+        "-s",
+        plasma_store_name,
+        "-m",
+        str(plasma_store_memory),
+    ]
 
     stdout = stderr = None if verbose else subprocess.DEVNULL
 
