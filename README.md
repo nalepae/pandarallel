@@ -66,20 +66,33 @@ Then, you have to initialize it.
 pandarallel.initialize()
 ```
 
-This method takes 4 optional parameters:
+This method takes 5 optional parameters:
 
-- `shm_size_mb`: The size of the Pandarallel shared memory in MB. If the
-  default one is too small, it is possible to set a larger one. By default,
-  it is set to 2 GB. (int)
-- `nb_workers`: The number of workers. By default, it is set to the number
-  of cores your operating system sees. (int)
-- `progress_bar`: Put it to `True` to display a progress bar.
-- `verbose`: The verbosity level. > 1 display all logs - 1, display only
-  initialization logs - < 1 display no log (int)
+- `shm_size_mb`: Deprecated
+- `nb_workers`: Number of workers used for parallelisation. (int)
+                If not set, all available CPUs will be used.
+- `progress_bar`: Display progress bars if set to `True`. (bool)
+- `verbose`: The verbosity level (int)
+   - 0 - Don't display any logs
+   - 1 - Display only warning logs
+   - 2 - Display all logs
+- `use_memory_fs`: (bool)
+   - If set to None and if memory file system is available, Pandarallel will use it to
+tranfer data between the main process and workers. If memory file system is not
+available, Pandarallel will default on multiprocessing data transfer (pipe).
+   - If set to True, Pandaralllel will use memory file system to tranfer data between
+the main process and workers and will raise a SystemError if memory file system is not available.
+   - If set to False, Pandarallel will use multiprocessing data transfer (pipe) to
+tranfer data between the main process and workers.
 
-**WARNING**: Progress bar is an experimental feature. This can lead to a
-considerable performance loss.
-Not available for `DataFrameGroupy.parallel_apply`.
+Using memory file system reduces data transfer time between the main process and
+workers, especially for big data.
+
+Memory file system is considered as available only if the directory `/dev/shm` exists
+and if the user has read an writerights on it.
+
+Basicaly memory file system is only available on some Linux distributions (including
+Ubuntu)
 
 With `df` a pandas DataFrame, `series` a pandas Series, `func` a function to
 apply/map, `args1`, `args2` some arguments & `col_name` a column name:
@@ -103,7 +116,3 @@ _I have 8 CPUs but `parallel_apply` speeds up computation only about x4. Why ?_
 Actually **Pandarallel** can only speed up computation until about the number of **cores** your computer has. The majority of recent CPUs (like Intel core-i7) uses hyperthreading. For example, a 4 cores hyperthreaded CPU will show 8 CPUs to the Operating System, but will **really** have only 4 physical computation units.
 
 On **Ubuntu**, you can get the number of cores with `$ grep -m 1 'cpu cores' /proc/cpuinfo`.
-
-_When I run `from pandarallel import pandarallel`, I get `ModuleNotFoundError: No module named 'pyarrow._plasma`. Why?_
-
-Are you using Windows? **Pandarallel** relies on the **Pyarrow Plasma** shared memory to work. Currently, **Pyarrow Plasma** works only on Linux & macOS (Windows in not supported). So sorry, but for now **Pandarallel** is supported only on Linux & macOS ...
