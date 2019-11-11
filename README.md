@@ -103,3 +103,14 @@ _I have 8 CPUs but `parallel_apply` speeds up computation only about x4. Why ?_
 Actually **Pandarallel** can only speed up computation until about the number of **cores** your computer has. The majority of recent CPUs (like Intel core-i7) uses hyperthreading. For example, a 4 cores hyperthreaded CPU will show 8 CPUs to the Operating System, but will **really** have only 4 physical computation units.
 
 On **Ubuntu**, you can get the number of cores with `$ grep -m 1 'cpu cores' /proc/cpuinfo`.
+
+_I use **Jupyter lab** and instead of progress bars I have this kind of things:_
+`VBox(children=(HBox(children=(IntProgress(value=0, description='0.00%', max=625000), Label(value='0 / 625000')…`
+
+Run this 3 following lines, and you should be able to see the progress bars:
+```
+$ pip install ipywidgets 
+$ jupyter nbextension enable --py widgetsnbextension
+$ jupyter labextension install @jupyter-widgets/jupyterlab-manager
+```
+(You may also have to install `nodejs` if asked)
