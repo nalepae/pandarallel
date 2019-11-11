@@ -197,10 +197,27 @@ def get_workers_args(
         input_files = create_temp_files(nb_workers)
         output_files = create_temp_files(nb_workers)
 
-        chunk_lengths = [
-            dump_and_get_lenght(chunk, input_file)
-            for chunk, input_file in zip(chunks, input_files)
-        ]
+        try:
+            chunk_lengths = [
+                dump_and_get_lenght(chunk, input_file)
+                for chunk, input_file in zip(chunks, input_files)
+            ]
+        except OSError:
+            link = "https://stackoverflow.com/questions/58804022/how-to-resize-dev-shm"
+            msg = " ".join(
+                (
+                    "It seems you use Memory File System and you don't have enough",
+                    "available space in `dev/shm`. You can either call",
+                    "pandarallel.initalize with `use memory_fs=False`, or you can ",
+                    "increase the size of `dev/shm` as described here:",
+                    link,
+                    ".",
+                    " Please also remove all files beginning with 'pandarallel_' in the",
+                    "`/dev/shm` directory. If you have troubles with your web browser,",
+                    "these troubles should deseapper after cleaning `/dev/shm`.",
+                )
+            )
+            raise OSError(msg)
 
         workers_args = [
             (
