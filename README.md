@@ -104,6 +104,8 @@ Actually **Pandarallel** can only speed up computation until about the number of
 
 On **Ubuntu**, you can get the number of cores with `$ grep -m 1 'cpu cores' /proc/cpuinfo`.
 
+--------------------------------
+
 _I use **Jupyter lab** and instead of progress bars I have this kind of things:_
 `VBox(children=(HBox(children=(IntProgress(value=0, description='0.00%', max=625000), Label(value='0 / 625000')…`
 
