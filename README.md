@@ -10,11 +10,13 @@
 
 ## Installation
 
-`$ pip install pandarallel -U [--user]`
+`$ pip install pandarallel [--upgrade] [--user]`
 
 ## Requirements
 
-- Linux or macOS (Windows is not supported at the moment)
+On Windows, **Pandaral·lel** will works only if the Python session (`python`, `ipython`, `jupyter notebook`, `jupyter lab`, ...) is executed from [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
+
+On Linux & macOS, nothing special has to be done.
 
 ## Warning
 
