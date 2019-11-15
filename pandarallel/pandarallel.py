@@ -323,8 +323,9 @@ def get_workers_result(
             worker_index = message
             finished_workers[worker_index] = ERROR
 
-            if show_progress_bar and is_notebook_lab():
-                progress_bars.set_error(worker_index)
+            if show_progress_bar:
+                if is_notebook_lab():
+                    progress_bars.set_error(worker_index)
                 progress_bars.update(progresses)
 
     results = map_result.get()
