@@ -16,7 +16,7 @@ from pandarallel.data_types.rolling_groupby import RollingGroupBy as RGB
 from pandarallel.data_types.series import Series as S
 from pandarallel.data_types.series_rolling import SeriesRolling as SR
 from pandarallel.utils.inliner import inline
-from pandarallel.utils.progress_bars import get_progress_bars
+from pandarallel.utils.progress_bars import get_progress_bars, is_notebook_lab
 from pandarallel.utils.tools import ERROR, INPUT_FILE_READ, PROGRESSION, VALUE
 
 NB_WORKERS = cpu_count()
@@ -323,7 +323,7 @@ def get_workers_result(
             worker_index = message
             finished_workers[worker_index] = ERROR
 
-            if show_progress_bar:
+            if show_progress_bar and is_notebook_lab():
                 progress_bars.set_error(worker_index)
                 progress_bars.update(progresses)
 
