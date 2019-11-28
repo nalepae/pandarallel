@@ -1,3 +1,5 @@
+"""Main Pandarallel file"""
+
 import os
 import pickle
 from itertools import count
@@ -19,23 +21,31 @@ from pandarallel.utils.inliner import inline
 from pandarallel.utils.progress_bars import get_progress_bars, is_notebook_lab
 from pandarallel.utils.tools import ERROR, INPUT_FILE_READ, PROGRESSION, VALUE
 
+# By default, Pandarallel use all available CPUs
 NB_WORKERS = cpu_count()
+
+# Prefix and suffix for files used with Memory File System
 PREFIX = "pandarallel_"
 PREFIX_INPUT = PREFIX + "input_"
 PREFIX_OUTPUT = PREFIX + "output_"
 SUFFIX = ".pickle"
+
+# Root of Memory File System
 MEMORY_FS_ROOT = "/dev/shm"
 
 NO_PROGRESS, PROGRESS_IN_WORKER, PROGRESS_IN_FUNC, PROGRESS_IN_FUNC_MUL = list(range(4))
-
-_func = None
-
 
 class ProgressState:
     last_put_iteration = None
     next_put_iteration = None
     last_put_time = None
 
+# The goal of this part is to let Pandarallel to serialize functions which are not defined
+# at the top level of the module (like DataFrame.Apply.worker). This trick is inspired by 
+# this article: https://medium.com/@yasufumy/python-multiprocessing-c6d54107dd55
+# Warning: In this article, the trick is presented to be able to serialize lambda functions.
+# Even if Pandarallel is able to serialize lambda functions, it is only thanks to `dill`.
+_func = None
 
 def worker_init(func):
     global _func
@@ -47,12 +57,28 @@ def global_worker(x):
 
 
 def is_memory_fs_available():
+    """Check if Memory File System is available"""
     return os.path.exists(MEMORY_FS_ROOT)
 
 
 def prepare_worker(use_memory_fs):
     def closure(function):
         def wrapper(worker_args):
+            """This function runs on WORKERS.
+            
+            If Memory File System is used:
+            1. Load all pickled files (previously dumped by the MASTER) in the
+               Memory File System
+            2. Undill the function to apply (for lambda functions)
+            3. Tell to the MASTER the input file has been read (so the MASTER can remove it
+               from the memory
+            4. Apply the function
+            5. Pickle the result in the Memory File System (so the Master can read it)
+            6. Tell the master task is finished
+            
+            If Memory File System is not used, steps are the same except 1. and 5. which are
+            skipped.
+            """
             if use_memory_fs:
                 (
                     input_file_path,
@@ -127,6 +153,7 @@ def prepare_worker(use_memory_fs):
 
 
 def create_temp_files(nb_files):
+    """Create temporary files in Memory File System."""
     return [
         NamedTemporaryFile(prefix=PREFIX_INPUT, suffix=SUFFIX, dir=MEMORY_FS_ROOT)
         for _ in range(nb_files)
@@ -134,6 +161,11 @@ def create_temp_files(nb_files):
 
 
 def progress_pre_func(queue, index, counter, progression, state, time):
+    """Send progress to the MASTER about every 250 ms.
+    
+    The estimation system is implemented to avoid to call time() to often,
+    which is time consuming.
+    """
     iteration = next(counter)
 
     if iteration == state.next_put_iteration:
@@ -149,6 +181,11 @@ def progress_pre_func(queue, index, counter, progression, state, time):
 
 
 def progress_wrapper(progress_bar, queue, index, chunk_size):
+    """Wrap the function to apply in a function which monitor the part of work already done.
+    
+    inline is used instead of traditional wrapping system to avoid unnecessary function call
+    (and context switch) which is time consuming.
+    """
     counter = count()
     state = ProgressState()
     state.last_put_iteration = 0
@@ -187,6 +224,21 @@ def get_workers_args(
     args,
     kwargs,
 ):
+    """This function is run on the MASTER.
+    
+    If Memory File System is used:
+    1. Create temporary files in Memory File System
+    2. Dump chunked input files into Memory File System
+       (So they can be read by workers)
+    3. Break input data into several chunks
+    4. Wrap the function to apply to display progress bars
+    5. Dill the function to apply (to handle lambda functions)
+    6. Return the function to be sent to workers and path of files
+       in the Memory File System
+       
+    If Memory File System is not used, steps are the same except 1. and 2. which are
+    skipped. For step 6., paths are not returned.
+    """
     def dump_and_get_lenght(chunk, input_file):
         with open(input_file.name, "wb") as file:
             pickle.dump(chunk, file)
@@ -283,6 +335,7 @@ def get_workers_result(
     output_files,
     map_result,
 ):
+    """Wait for the workers result while eventually display progress bars."""
     if show_progress_bar:
         if show_progress_bar == PROGRESS_IN_FUNC_MUL:
             chunk_lengths = [
@@ -347,6 +400,13 @@ def parallelize(
     get_worker_meta_args=lambda _: dict(),
     get_reduce_meta_args=lambda _: dict(),
 ):
+    """Master function.
+    1. Split data into chunks
+    2. Send chunks to workers
+    3. Wait for the workers results (while displaying a progress bar if needed)
+    4. One results are available, combine them
+    5. Return combined results to the user
+    """
     def closure(data, func, *args, **kwargs):
         chunks = get_chunks(nb_workers, data, *args, **kwargs)
         nb_columns = len(data.columns) if progress_bar == PROGRESS_IN_FUNC_MUL else None
