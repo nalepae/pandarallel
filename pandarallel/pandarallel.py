@@ -372,6 +372,7 @@ def parallelize(
             )
 
             map_result = pool.map_async(global_worker, workers_args)
+            pool.close()
 
             results = get_workers_result(
                 use_memory_fs,
