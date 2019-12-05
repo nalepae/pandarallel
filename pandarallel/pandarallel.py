@@ -260,7 +260,7 @@ def get_workers_args(
                 (
                     "It seems you use Memory File System and you don't have enough",
                     "available space in `dev/shm`. You can either call",
-                    "pandarallel.initalize with `use memory_fs=False`, or you can ",
+                    "pandarallel.initalize with `use_memory_fs=False`, or you can ",
                     "increase the size of `dev/shm` as described here:",
                     link,
                     ".",
