@@ -576,5 +576,5 @@ class pandarallel:
 
         # Rolling GroupBy
         args = bargs_prog_worker + (RGB.get_chunks, RGB.worker, RGB.reduce)
-        kwargs = dict(get_worker_meta_args=SR.att2value)
+        kwargs = dict(get_worker_meta_args=RGB.att2value)
         RollingGroupby.parallel_apply = parallelize(*args, **kwargs)
