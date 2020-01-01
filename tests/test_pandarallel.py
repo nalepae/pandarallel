@@ -63,7 +63,7 @@ def func_series_apply(request):
     return dict(
         named=func,
         anonymous=lambda x, power, bias=0: math.log10(math.sqrt(math.exp(x ** power)))
-                                           + bias,
+        + bias,
     )[request.param]
 
 
@@ -75,9 +75,9 @@ def func_series_rolling_apply(request):
     return dict(
         named=func,
         anonymous=lambda x: x.iloc[0]
-                            + x.iloc[1] ** 2
-                            + x.iloc[2] ** 3
-                            + x.iloc[3] ** 4,
+        + x.iloc[1] ** 2
+        + x.iloc[2] ** 3
+        + x.iloc[3] ** 4,
     )[request.param]
 
 
@@ -101,15 +101,17 @@ def func_dataframe_groupby_rolling_apply(request):
     return dict(
         named=func,
         anonymous=lambda x: x.iloc[0]
-                            + x.iloc[1] ** 2
-                            + x.iloc[2] ** 3
-                            + x.iloc[3] ** 4,
+        + x.iloc[1] ** 2
+        + x.iloc[2] ** 3
+        + x.iloc[3] ** 4,
     )[request.param]
 
 
 @pytest.fixture()
 def pandarallel_init(progress_bar, use_memory_fs):
-    pandarallel.initialize(progress_bar=progress_bar, use_memory_fs=use_memory_fs, nb_workers=2)
+    pandarallel.initialize(
+        progress_bar=progress_bar, use_memory_fs=use_memory_fs, nb_workers=2
+    )
 
 
 def test_dataframe_apply_axis_0(pandarallel_init, func_dataframe_apply_axis_0):
@@ -206,7 +208,7 @@ def test_dataframe_groupby_apply(pandarallel_init, func_dataframe_groupby_apply)
 
 
 def test_dataframe_groupby_rolling_apply(
-        pandarallel_init, func_dataframe_groupby_rolling_apply
+    pandarallel_init, func_dataframe_groupby_rolling_apply
 ):
     df_size = int(1e2)
     df = pd.DataFrame(
@@ -215,34 +217,33 @@ def test_dataframe_groupby_rolling_apply(
 
     res = (
         df.groupby("a")
-            .b.rolling(4)
-            .apply(func_dataframe_groupby_rolling_apply, raw=False)
+        .b.rolling(4)
+        .apply(func_dataframe_groupby_rolling_apply, raw=False)
     )
     res_parallel = (
         df.groupby("a")
-            .b.rolling(4)
-            .parallel_apply(func_dataframe_groupby_rolling_apply, raw=False)
+        .b.rolling(4)
+        .parallel_apply(func_dataframe_groupby_rolling_apply, raw=False)
     )
     res.equals(res_parallel)
 
 
 def test_datetime_rolling(pandarallel_init):
     from datetime import datetime
-    test_df = pd.DataFrame([{"datetime": datetime.now(), "A": 1, "B": 7},
-                            {"datetime": datetime.now(), "A": 2, "B": 4}])
 
-    grouped_test_df = test_df.set_index('datetime').groupby('A')
+    test_df = pd.DataFrame(
+        [
+            {"datetime": datetime.now(), "A": 1, "B": 7},
+            {"datetime": datetime.now(), "A": 2, "B": 4},
+        ]
+    )
 
-    interval = '1D'
+    grouped_test_df = test_df.set_index("datetime").groupby("A")
 
-    res = (grouped_test_df.rolling(interval)
-           .B
-           .parallel_apply(np.sum))
+    interval = "1D"
 
-    res_parallel = (grouped_test_df.rolling(interval)
-                    .B
-                    .parallel_apply(np.sum))
+    res = grouped_test_df.rolling(interval).B.parallel_apply(np.sum)
+
+    res_parallel = grouped_test_df.rolling(interval).B.parallel_apply(np.sum)
 
     res.equals(res_parallel)
-
-:q

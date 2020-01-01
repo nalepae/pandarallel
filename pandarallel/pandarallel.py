@@ -41,7 +41,7 @@ class ProgressState:
     last_put_time = None
 
 # The goal of this part is to let Pandarallel to serialize functions which are not defined
-# at the top level of the module (like DataFrame.Apply.worker). This trick is inspired by 
+# at the top level of the module (like DataFrame.Apply.worker). This trick is inspired by
 # this article: https://medium.com/@yasufumy/python-multiprocessing-c6d54107dd55
 # Warning: In this article, the trick is presented to be able to serialize lambda functions.
 # Even if Pandarallel is able to serialize lambda functions, it is only thanks to `dill`.
@@ -65,7 +65,7 @@ def prepare_worker(use_memory_fs):
     def closure(function):
         def wrapper(worker_args):
             """This function runs on WORKERS.
-            
+
             If Memory File System is used:
             1. Load all pickled files (previously dumped by the MASTER) in the
                Memory File System
@@ -75,7 +75,7 @@ def prepare_worker(use_memory_fs):
             4. Apply the function
             5. Pickle the result in the Memory File System (so the Master can read it)
             6. Tell the master task is finished
-            
+
             If Memory File System is not used, steps are the same except 1. and 5. which are
             skipped.
             """
@@ -162,7 +162,7 @@ def create_temp_files(nb_files):
 
 def progress_pre_func(queue, index, counter, progression, state, time):
     """Send progress to the MASTER about every 250 ms.
-    
+
     The estimation system is implemented to avoid to call time() to often,
     which is time consuming.
     """
@@ -182,7 +182,7 @@ def progress_pre_func(queue, index, counter, progression, state, time):
 
 def progress_wrapper(progress_bar, queue, index, chunk_size):
     """Wrap the function to apply in a function which monitor the part of work already done.
-    
+
     inline is used instead of traditional wrapping system to avoid unnecessary function call
     (and context switch) which is time consuming.
     """
@@ -225,7 +225,7 @@ def get_workers_args(
     kwargs,
 ):
     """This function is run on the MASTER.
-    
+
     If Memory File System is used:
     1. Create temporary files in Memory File System
     2. Dump chunked input files into Memory File System
@@ -235,7 +235,7 @@ def get_workers_args(
     5. Dill the function to apply (to handle lambda functions)
     6. Return the function to be sent to workers and path of files
        in the Memory File System
-       
+
     If Memory File System is not used, steps are the same except 1. and 2. which are
     skipped. For step 6., paths are not returned.
     """

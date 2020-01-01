@@ -28,16 +28,16 @@ class RollingGroupBy:
 
         # Fix window for win_type = freq, because then it was defined by the user in a format like '1D' and refers
         # to a time window rolling
-        if 'win_type' in attributes and attributes['win_type'] == 'freq':
+        if "win_type" in attributes and attributes["win_type"] == "freq":
             window = to_offset(timedelta(microseconds=int(attributes["window"] / 1000)))
-            attributes['window'] = window
+            attributes["window"] = window
             attributes.pop("win_type")
 
         return attributes
 
     @staticmethod
     def worker(
-            tuples, index, attribute2value, queue, progress_bar, func, *args, **kwargs
+        tuples, index, attribute2value, queue, progress_bar, func, *args, **kwargs
     ):
         # TODO: See if this pd.concat is avoidable
         results = []
