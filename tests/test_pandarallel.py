@@ -1,10 +1,11 @@
+import math
+from datetime import datetime
+
+import numpy as np
+import pandas as pd
 import pytest
 
 from pandarallel import pandarallel
-
-import pandas as pd
-import numpy as np
-import math
 
 
 @pytest.fixture(params=(False, True))
@@ -229,21 +230,18 @@ def test_dataframe_groupby_rolling_apply(
 
 
 def test_datetime_rolling(pandarallel_init):
-    from datetime import datetime
-
-    test_df = pd.DataFrame(
+    df = pd.DataFrame(
         [
             {"datetime": datetime.now(), "A": 1, "B": 7},
             {"datetime": datetime.now(), "A": 2, "B": 4},
         ]
     )
 
-    grouped_test_df = test_df.set_index("datetime").groupby("A")
-
-    interval = "1D"
-
-    res = grouped_test_df.rolling(interval).B.parallel_apply(np.sum)
-
-    res_parallel = grouped_test_df.rolling(interval).B.parallel_apply(np.sum)
-
+    res = df.set_index("datetime").groupby("A").rolling("1D").B.apply(sum, raw=True)
+    res_parallel = (
+        df.set_index("datetime")
+        .groupby("A")
+        .rolling("1D")
+        .B.parallel_apply(sum, raw=True)
+    )
     res.equals(res_parallel)
