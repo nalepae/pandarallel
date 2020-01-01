@@ -65,12 +65,12 @@ This method takes 5 optional parameters:
    - 2 - Display all logs
 - `use_memory_fs`: (bool)
    - If set to None and if memory file system is available, Pandarallel will use it to
-tranfer data between the main process and workers. If memory file system is not
+transfer data between the main process and workers. If memory file system is not
 available, Pandarallel will default on multiprocessing data transfer (pipe).
-   - If set to True, Pandaralllel will use memory file system to tranfer data between
+   - If set to True, Pandaralllel will use memory file system to transfer data between
 the main process and workers and will raise a SystemError if memory file system is not available.
    - If set to False, Pandarallel will use multiprocessing data transfer (pipe) to
-tranfer data between the main process and workers.
+transfer data between the main process and workers.
 
 Using memory file system reduces data transfer time between the main process and
 workers, especially for big data.
