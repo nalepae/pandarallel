@@ -20,7 +20,7 @@ class DataFrame:
 
             for chunk_ in chunk(df.shape[opposite_axis], nb_workers):
                 if axis == 1:
-                    yield df[chunk_]
+                    yield df.iloc[chunk_]
                 else:
                     yield df.iloc[:, chunk_]
 
@@ -34,7 +34,7 @@ class DataFrame:
         @staticmethod
         def get_chunks(nb_workers, df, *_):
             for chunk_ in chunk(df.shape[0], nb_workers):
-                yield df[chunk_]
+                yield df.iloc[chunk_]
 
         @staticmethod
         def worker(df, _index, _meta_args, _progress_bar, _queue, func, *_):

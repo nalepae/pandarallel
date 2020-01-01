@@ -129,6 +129,7 @@ def test_dataframe_apply_axis_0(pandarallel_init, func_dataframe_apply_axis_0):
             h=np.random.rand(df_size),
         )
     )
+    df.index = [item / 10 for item in df.index]
 
     res = df.apply(func_dataframe_apply_axis_0)
     res_parallel = df.parallel_apply(func_dataframe_apply_axis_0)
@@ -140,6 +141,7 @@ def test_dataframe_apply_axis_1(pandarallel_init, func_dataframe_apply_axis_1):
     df = pd.DataFrame(
         dict(a=np.random.randint(1, 8, df_size), b=np.random.rand(df_size))
     )
+    df.index = [item / 10 for item in df.index]
 
     res = df.apply(func_dataframe_apply_axis_1, axis=1)
     res_parallel = df.parallel_apply(func_dataframe_apply_axis_1, axis=1)
@@ -151,6 +153,7 @@ def test_dataframe_applymap(pandarallel_init, func_dataframe_applymap):
     df = pd.DataFrame(
         dict(a=np.random.randint(1, 8, df_size), b=np.random.rand(df_size))
     )
+    df.index = [item / 10 for item in df.index]
 
     res = df.applymap(func_dataframe_applymap)
     res_parallel = df.parallel_applymap(func_dataframe_applymap)
