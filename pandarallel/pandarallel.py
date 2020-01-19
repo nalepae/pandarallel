@@ -489,16 +489,16 @@ class pandarallel:
 
         use_memory_fs: bool, optional
             If set to None and if memory file system is available, Pandaralllel will use
-            it to tranfer data between the main process and workers. If memory file
+            it to transfer data between the main process and workers. If memory file
             system is not available, Pandarallel will default on multiprocessing data
             transfer (pipe).
 
-            If set to True, Pandarallel will use memory file system to tranfer data
+            If set to True, Pandarallel will use memory file system to transfer data
             between the main process and workers and will raise a SystemError if memory
             file system is not available.
 
             If set to False, Pandarallel will use multiprocessing data transfer
-            (pipe) to tranfer data between the main process and workers.
+            (pipe) to transfer data between the main process and workers.
 
             Using memory file system reduces data transfer time between the main
             process and workers, especially for big data.
@@ -528,7 +528,7 @@ class pandarallel:
                 )
             else:
                 print(
-                    "INFO: Pandarallel will use standard multiprocessing data tranfer",
+                    "INFO: Pandarallel will use standard multiprocessing data transfer",
                     "(pipe) to transfer data between the main",
                     "process and workers.",
                     sep=" ",
