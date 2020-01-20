@@ -4,29 +4,21 @@ from pandarallel.utils.tools import chunk
 
 
 class DataFrameGroupBy:
+
     @staticmethod
-    def get_index(df_grouped):
-        if len(df_grouped.grouper.shape) == 1:
-            # One element in "by" argument
-            if type(df_grouped.keys) == list:
-                # "by" argument is a list with only one element
-                keys = df_grouped.keys[0]
-            else:
-                keys = df_grouped.keys
+    def get_reduce_meta_args(df_grouped):
+        return df_grouped
 
-            return pd.Series(list(df_grouped.grouper), name=keys)
-
-        # A list in "by" argument
-        return pd.MultiIndex.from_tuples(
-            list(df_grouped.grouper), names=df_grouped.keys
+    @staticmethod
+    def reduce(results, df_grouped):
+        results = itertools.chain.from_iterable([r for r in results])
+        keys, values, mutated = zip(*results)
+        mutated = any(mutated)
+        return df_grouped._wrap_applied_output(
+                keys,
+                values,
+                not_indexed_same=df_grouped.mutated or mutated
         )
-
-    @staticmethod
-    def reduce(results, index):
-        return pd.DataFrame(
-            list(itertools.chain.from_iterable([result for result in results])),
-            index=index,
-        ).squeeze()
 
     @staticmethod
     def get_chunks(nb_workers, df_grouped, *args, **kwargs):
@@ -40,4 +32,11 @@ class DataFrameGroupBy:
     def worker(
         tuples, _index, _meta_args, _progress_bar, _queue, func, *args, **kwargs
     ):
-        return [func(df, *args, **kwargs) for _, df in tuples]
+        keys, results, mutated = [], [], []
+        for key, df in tuples:
+            res = func(df, *args, **kwargs)
+            results.append(res)
+            mutated.append(not pd.core.groupby.ops._is_indexed_like(res, df.axes))
+            keys.append(key)
+
+        return zip(keys, results, mutated)
