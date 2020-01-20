@@ -94,6 +94,17 @@ def func_dataframe_groupby_apply():
     return func
 
 
+@pytest.fixture()
+def func_dataframe_groupby_apply_complex():
+    def func(df):
+        return pd.DataFrame(
+            [[df.b.mean(), df.b.min(), df.b.max()]],
+            columns=["b_mean", "b_min", "b_max"],
+        )
+
+    return func
+
+
 @pytest.fixture(params=("named", "anonymous"))
 def func_dataframe_groupby_rolling_apply(request):
     def func(x):
@@ -208,6 +219,19 @@ def test_dataframe_groupby_apply(pandarallel_init, func_dataframe_groupby_apply)
 
     res = df.groupby(["a", "b"]).apply(func_dataframe_groupby_apply)
     res_parallel = df.groupby(["a", "b"]).parallel_apply(func_dataframe_groupby_apply)
+    res.equals(res_parallel)
+
+
+def test_dataframe_groupby_apply_complex(
+    pandarallel_init, func_dataframe_groupby_apply_complex
+):
+    df_size = int(3e3)
+    df = pd.DataFrame(
+        dict(a=np.random.randint(1, 100, df_size), b=np.random.rand(df_size))
+    )
+
+    res = df.groupby("a").apply(func_dataframe_groupby_apply_complex)
+    res_parallel = df.groupby("a").parallel_apply(func_dataframe_groupby_apply_complex)
     res.equals(res_parallel)
 
 
