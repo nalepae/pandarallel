@@ -35,10 +35,12 @@ MEMORY_FS_ROOT = "/dev/shm"
 
 NO_PROGRESS, PROGRESS_IN_WORKER, PROGRESS_IN_FUNC, PROGRESS_IN_FUNC_MUL = list(range(4))
 
+
 class ProgressState:
     last_put_iteration = None
     next_put_iteration = None
     last_put_time = None
+
 
 # The goal of this part is to let Pandarallel to serialize functions which are not defined
 # at the top level of the module (like DataFrame.Apply.worker). This trick is inspired by
@@ -46,6 +48,7 @@ class ProgressState:
 # Warning: In this article, the trick is presented to be able to serialize lambda functions.
 # Even if Pandarallel is able to serialize lambda functions, it is only thanks to `dill`.
 _func = None
+
 
 def worker_init(func):
     global _func
@@ -239,6 +242,7 @@ def get_workers_args(
     If Memory File System is not used, steps are the same except 1. and 2. which are
     skipped. For step 6., paths are not returned.
     """
+
     def dump_and_get_lenght(chunk, input_file):
         with open(input_file.name, "wb") as file:
             pickle.dump(chunk, file)
@@ -407,6 +411,7 @@ def parallelize(
     4. One results are available, combine them
     5. Return combined results to the user
     """
+
     def closure(data, func, *args, **kwargs):
         chunks = get_chunks(nb_workers, data, *args, **kwargs)
         nb_columns = len(data.columns) if progress_bar == PROGRESS_IN_FUNC_MUL else None

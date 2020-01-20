@@ -4,7 +4,6 @@ from pandarallel.utils.tools import chunk
 
 
 class DataFrameGroupBy:
-
     @staticmethod
     def get_reduce_meta_args(df_grouped):
         return df_grouped
@@ -15,9 +14,7 @@ class DataFrameGroupBy:
         keys, values, mutated = zip(*results)
         mutated = any(mutated)
         return df_grouped._wrap_applied_output(
-                keys,
-                values,
-                not_indexed_same=df_grouped.mutated or mutated
+            keys, values, not_indexed_same=df_grouped.mutated or mutated
         )
 
     @staticmethod
