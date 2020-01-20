@@ -10,7 +10,7 @@ class DataFrameGroupBy:
 
     @staticmethod
     def reduce(results, df_grouped):
-        results = itertools.chain.from_iterable([r for r in results])
+        results = itertools.chain.from_iterable(results)
         keys, values, mutated = zip(*results)
         mutated = any(mutated)
         return df_grouped._wrap_applied_output(
