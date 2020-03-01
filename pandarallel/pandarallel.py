@@ -519,6 +519,12 @@ class pandarallel:
         memory_fs_available = is_memory_fs_available()
         use_memory_fs = use_memory_fs or use_memory_fs is None and memory_fs_available
 
+        if shm_size_mb:
+            print(
+                "WARNING: `shm_size_mb` is a deprecated argument. "
+                "It will be removed in `pandarallel 2.0.0`."
+            )
+
         if use_memory_fs and not memory_fs_available:
             raise SystemError("Memory file system is not available")
 
