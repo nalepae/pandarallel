@@ -8,6 +8,11 @@ import pytest
 from pandarallel import pandarallel
 
 
+@pytest.fixture(params=(1000, 1))
+def df_size(request):
+    return request.param
+
+
 @pytest.fixture(params=(False, True))
 def progress_bar(request):
     return request.param
@@ -126,8 +131,7 @@ def pandarallel_init(progress_bar, use_memory_fs):
     )
 
 
-def test_dataframe_apply_axis_0(pandarallel_init, func_dataframe_apply_axis_0):
-    df_size = int(1e1)
+def test_dataframe_apply_axis_0(pandarallel_init, func_dataframe_apply_axis_0, df_size):
     df = pd.DataFrame(
         dict(
             a=np.random.randint(1, 8, df_size),
@@ -147,8 +151,7 @@ def test_dataframe_apply_axis_0(pandarallel_init, func_dataframe_apply_axis_0):
     assert res.equals(res_parallel)
 
 
-def test_dataframe_apply_axis_1(pandarallel_init, func_dataframe_apply_axis_1):
-    df_size = int(1e1)
+def test_dataframe_apply_axis_1(pandarallel_init, func_dataframe_apply_axis_1, df_size):
     df = pd.DataFrame(
         dict(a=np.random.randint(1, 8, df_size), b=np.random.rand(df_size))
     )
@@ -159,8 +162,7 @@ def test_dataframe_apply_axis_1(pandarallel_init, func_dataframe_apply_axis_1):
     assert res.equals(res_parallel)
 
 
-def test_dataframe_applymap(pandarallel_init, func_dataframe_applymap):
-    df_size = int(1e1)
+def test_dataframe_applymap(pandarallel_init, func_dataframe_applymap, df_size):
     df = pd.DataFrame(
         dict(a=np.random.randint(1, 8, df_size), b=np.random.rand(df_size))
     )
@@ -171,8 +173,7 @@ def test_dataframe_applymap(pandarallel_init, func_dataframe_applymap):
     assert res.equals(res_parallel)
 
 
-def test_series_map(pandarallel_init, func_series_map):
-    df_size = int(1e1)
+def test_series_map(pandarallel_init, func_series_map, df_size):
     df = pd.DataFrame(dict(a=np.random.rand(df_size) + 1))
 
     res = df.a.map(func_series_map)
@@ -180,8 +181,7 @@ def test_series_map(pandarallel_init, func_series_map):
     assert res.equals(res_parallel)
 
 
-def test_series_apply(pandarallel_init, func_series_apply):
-    df_size = int(1e1)
+def test_series_apply(pandarallel_init, func_series_apply, df_size):
     df = pd.DataFrame(dict(a=np.random.rand(df_size) + 1))
 
     res = df.a.apply(func_series_apply, args=(2,), bias=3)
@@ -189,8 +189,7 @@ def test_series_apply(pandarallel_init, func_series_apply):
     assert res.equals(res_parallel)
 
 
-def test_series_rolling_apply(pandarallel_init, func_series_rolling_apply):
-    df_size = int(1e2)
+def test_series_rolling_apply(pandarallel_init, func_series_rolling_apply, df_size):
     df = pd.DataFrame(dict(a=np.random.randint(1, 8, df_size), b=list(range(df_size))))
 
     res = df.b.rolling(4).apply(func_series_rolling_apply, raw=False)
@@ -199,8 +198,9 @@ def test_series_rolling_apply(pandarallel_init, func_series_rolling_apply):
     assert res.equals(res_parallel)
 
 
-def test_dataframe_groupby_apply(pandarallel_init, func_dataframe_groupby_apply):
-    df_size = int(1e1)
+def test_dataframe_groupby_apply(
+    pandarallel_init, func_dataframe_groupby_apply, df_size
+):
     df = pd.DataFrame(
         dict(
             a=np.random.randint(1, 8, df_size),
@@ -223,9 +223,8 @@ def test_dataframe_groupby_apply(pandarallel_init, func_dataframe_groupby_apply)
 
 
 def test_dataframe_groupby_apply_complex(
-    pandarallel_init, func_dataframe_groupby_apply_complex
+    pandarallel_init, func_dataframe_groupby_apply_complex, df_size
 ):
-    df_size = int(3e3)
     df = pd.DataFrame(
         dict(a=np.random.randint(1, 100, df_size), b=np.random.rand(df_size))
     )
@@ -236,9 +235,8 @@ def test_dataframe_groupby_apply_complex(
 
 
 def test_dataframe_groupby_rolling_apply(
-    pandarallel_init, func_dataframe_groupby_rolling_apply
+    pandarallel_init, func_dataframe_groupby_rolling_apply, df_size
 ):
-    df_size = int(1e2)
     df = pd.DataFrame(
         dict(a=np.random.randint(1, 10, df_size), b=np.random.rand(df_size))
     )
