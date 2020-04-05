@@ -251,13 +251,16 @@ def get_workers_args(
 
     if use_memory_fs:
         input_files = create_temp_files(nb_workers)
-        output_files = create_temp_files(nb_workers)
 
         try:
             chunk_lengths = [
                 dump_and_get_lenght(chunk, input_file)
                 for chunk, input_file in zip(chunks, input_files)
             ]
+
+            nb_chunks = len(chunk_lengths)
+            output_files = create_temp_files(nb_chunks)
+
         except OSError:
             link = "https://stackoverflow.com/questions/58804022/how-to-resize-dev-shm"
             msg = " ".join(
