@@ -7,3 +7,5 @@ dist
 *.egg-info
 .mypy_cache
 .pytest_cache
+.idea/
+venv/

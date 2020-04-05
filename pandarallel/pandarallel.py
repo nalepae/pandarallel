@@ -2,6 +2,7 @@
 
 import os
 import pickle
+import types
 from itertools import count
 from multiprocessing import Manager, Pool, cpu_count
 from tempfile import NamedTemporaryFile
@@ -183,32 +184,40 @@ def progress_pre_func(queue, index, counter, progression, state, time):
         state.last_put_time = time_now
 
 
-def progress_wrapper(progress_bar, queue, index, chunk_size):
+def progress_wrapper(progress_bar, queue, index, chunk_size, use_bytecode_inline: bool = True) -> types.FunctionType:
     """Wrap the function to apply in a function which monitor the part of work already done.
 
     inline is used instead of traditional wrapping system to avoid unnecessary function call
     (and context switch) which is time consuming.
+
+
+    Parameters
+    ----------
+    use_bytecode_inline: Use bytecode inlining to call
+        the function updating the progress (`progress_pre_func`) (default: `True`)
     """
     counter = count()
     state = ProgressState()
     state.last_put_iteration = 0
     state.next_put_iteration = max(chunk_size // 100, 1)
     state.last_put_time = time()
+    kwargs = dict(
+        queue=queue,
+        index=index,
+        counter=counter,
+        progression=PROGRESSION,
+        state=state,
+        time=time,
+    )
 
     def wrapper(func):
         if progress_bar:
-            wrapped_func = inline(
-                progress_pre_func,
-                func,
-                dict(
-                    queue=queue,
-                    index=index,
-                    counter=counter,
-                    progression=PROGRESSION,
-                    state=state,
-                    time=time,
-                ),
-            )
+            if use_bytecode_inline:
+                def wrapped_func(*fargs, **fkwargs):
+                    progress_pre_func(**kwargs)
+                    return func(*fargs, **fkwargs)
+            else:
+                wrapped_func = inline(progress_pre_func, func, kwargs)
             return wrapped_func
 
         return func
@@ -226,6 +235,7 @@ def get_workers_args(
     func,
     args,
     kwargs,
+    use_bytecode_inline: bool = True,
 ):
     """This function is run on the MASTER.
 
@@ -241,6 +251,11 @@ def get_workers_args(
 
     If Memory File System is not used, steps are the same except 1. and 2. which are
     skipped. For step 6., paths are not returned.
+
+    Parameters
+    ----------
+    use_bytecode_inline: Use bytecode inlining to call
+        the function updating the progress (`progress_pre_func`) (default: `True`)
     """
 
     def dump_and_get_lenght(chunk, input_file):
@@ -285,7 +300,8 @@ def get_workers_args(
                 progress_bar == PROGRESS_IN_WORKER,
                 dill.dumps(
                     progress_wrapper(
-                        progress_bar >= PROGRESS_IN_FUNC, queue, index, chunk_length
+                        progress_bar >= PROGRESS_IN_FUNC, queue, index, chunk_length,
+                        use_bytecode_inline=use_bytecode_inline,
                     )(func)
                 ),
                 args,
@@ -314,6 +330,7 @@ def get_workers_args(
                                 queue,
                                 index,
                                 len(chunk),
+                                use_bytecode_inline=use_bytecode_inline,
                             )(func)
                         ),
                         args,
@@ -403,6 +420,7 @@ def parallelize(
     reduce,
     get_worker_meta_args=lambda _: dict(),
     get_reduce_meta_args=lambda _: dict(),
+    use_bytecode_inline: bool = True,
 ):
     """Master function.
     1. Split data into chunks
@@ -410,6 +428,9 @@ def parallelize(
     3. Wait for the workers results (while displaying a progress bar if needed)
     4. One results are available, combine them
     5. Return combined results to the user
+
+    :param use_bytecode_inline: Use bytecode inlining to call
+    the function updating the progress (`progress_pre_func`) (default: `True`)
     """
 
     def closure(data, func, *args, **kwargs):
@@ -430,6 +451,7 @@ def parallelize(
             func,
             args,
             kwargs,
+            use_bytecode_inline=use_bytecode_inline,
         )
         try:
             pool = Pool(
@@ -470,6 +492,7 @@ class pandarallel:
         progress_bar=False,
         verbose=2,
         use_memory_fs=None,
+        use_bytecode_inline: bool = True
     ):
         """
         Initialize Pandarallel shared memory.
@@ -514,6 +537,10 @@ class pandarallel:
 
             Basicaly memory file system is only available on some Linux
             distributions (including Ubuntu)
+
+        use_bytecode_inline: bool, optional
+            Default: `True`. If set to False, the python wrapper will be used to call
+            the function updating the progress (`progress_pre_func`) which is more portable, but less efficient.
         """
 
         memory_fs_available = is_memory_fs_available()
@@ -565,27 +592,29 @@ class pandarallel:
             DF.ApplyMap.worker,
             DF.reduce,
         )
-
-        DataFrame.parallel_applymap = parallelize(*args)
+        kwargs = dict(use_bytecode_inline=use_bytecode_inline)
+        DataFrame.parallel_applymap = parallelize(*args, **kwargs)
 
         # Series
         args = bargs_prog_func + (S.get_chunks, S.Apply.worker, S.reduce)
-        Series.parallel_apply = parallelize(*args)
+        kwargs = dict(use_bytecode_inline=use_bytecode_inline)
+        Series.parallel_apply = parallelize(*args, **kwargs)
 
         args = bargs_prog_func + (S.get_chunks, S.Map.worker, S.reduce)
-        Series.parallel_map = parallelize(*args)
+        kwargs = dict(use_bytecode_inline=use_bytecode_inline)
+        Series.parallel_map = parallelize(*args, **kwargs)
 
         # Series Rolling
         args = bargs_prog_func + (SR.get_chunks, SR.worker, SR.reduce)
-        kwargs = dict(get_worker_meta_args=SR.att2value)
+        kwargs = dict(get_worker_meta_args=SR.att2value, use_bytecode_inline=use_bytecode_inline)
         Rolling.parallel_apply = parallelize(*args, **kwargs)
 
         # DataFrame GroupBy
         args = bargs_prog_func + (DFGB.get_chunks, DFGB.worker, DFGB.reduce)
-        kwargs = dict(get_reduce_meta_args=DFGB.get_reduce_meta_args)
+        kwargs = dict(get_reduce_meta_args=DFGB.get_reduce_meta_args, use_bytecode_inline=use_bytecode_inline)
         DataFrameGroupBy.parallel_apply = parallelize(*args, **kwargs)
 
         # Rolling GroupBy
         args = bargs_prog_worker + (RGB.get_chunks, RGB.worker, RGB.reduce)
-        kwargs = dict(get_worker_meta_args=RGB.att2value)
+        kwargs = dict(get_worker_meta_args=RGB.att2value, use_bytecode_inline=use_bytecode_inline)
         RollingGroupby.parallel_apply = parallelize(*args, **kwargs)
