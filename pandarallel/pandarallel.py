@@ -266,13 +266,16 @@ def get_workers_args(
 
     if use_memory_fs:
         input_files = create_temp_files(nb_workers)
-        output_files = create_temp_files(nb_workers)
 
         try:
             chunk_lengths = [
                 dump_and_get_lenght(chunk, input_file)
                 for chunk, input_file in zip(chunks, input_files)
             ]
+
+            nb_chunks = len(chunk_lengths)
+            output_files = create_temp_files(nb_chunks)
+
         except OSError:
             link = "https://stackoverflow.com/questions/58804022/how-to-resize-dev-shm"
             msg = " ".join(
@@ -412,7 +415,7 @@ def get_workers_result(
 
 
 def parallelize(
-    nb_workers,
+    nb_requested_workers,
     use_memory_fs,
     progress_bar,
     get_chunks,
@@ -434,7 +437,7 @@ def parallelize(
     """
 
     def closure(data, func, *args, **kwargs):
-        chunks = get_chunks(nb_workers, data, *args, **kwargs)
+        chunks = get_chunks(nb_requested_workers, data, *args, **kwargs)
         nb_columns = len(data.columns) if progress_bar == PROGRESS_IN_FUNC_MUL else None
         worker_meta_args = get_worker_meta_args(data)
         reduce_meta_args = get_reduce_meta_args(data)
@@ -443,7 +446,7 @@ def parallelize(
 
         workers_args, chunk_lengths, input_files, output_files = get_workers_args(
             use_memory_fs,
-            nb_workers,
+            nb_requested_workers,
             progress_bar,
             chunks,
             worker_meta_args,
@@ -453,9 +456,12 @@ def parallelize(
             kwargs,
             use_bytecode_inline=use_bytecode_inline,
         )
+
+        nb_workers = len(chunk_lengths)
+
         try:
             pool = Pool(
-                nb_workers, worker_init, (prepare_worker(use_memory_fs)(worker),)
+                nb_workers, worker_init, (prepare_worker(use_memory_fs)(worker),),
             )
 
             map_result = pool.map_async(global_worker, workers_args)
