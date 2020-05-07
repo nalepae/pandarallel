@@ -438,13 +438,9 @@ def parallelize(
         nb_workers = len(chunk_lengths)
 
         try:
-            pool = Pool(
-                nb_workers, worker_init, (prepare_worker(use_memory_fs)(worker),),
-            )
-
-            map_result = pool.map_async(global_worker, workers_args)
-            pool.close()
-
+            with Pool(nb_workers, worker_init, (prepare_worker(use_memory_fs)(worker),), ) as pool:
+                map_result = pool.map_async(global_worker, workers_args)
+    
             results = get_workers_result(
                 use_memory_fs,
                 nb_workers,
