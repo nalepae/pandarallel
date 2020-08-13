@@ -124,6 +124,17 @@ def func_dataframe_groupby_rolling_apply(request):
     )[request.param]
 
 
+@pytest.fixture(params=("named", "anonymous"))
+def func_dataframe_groupby_expanding_apply(request):
+    def func(x):
+        return (x.multiply(pd.Series(range(1, len(x)), dtype='float'))).sum()
+
+    return dict(
+        named=func,
+        anonymous=lambda x: (x.multiply(pd.Series(range(1, len(x)), dtype='float'))).sum(),
+    )[request.param]
+
+
 @pytest.fixture()
 def pandarallel_init(progress_bar, use_memory_fs):
     pandarallel.initialize(
@@ -268,5 +279,25 @@ def test_datetime_rolling(pandarallel_init):
         .groupby("A")
         .rolling("1D")
         .B.parallel_apply(sum, raw=True)
+    )
+    res.equals(res_parallel)
+
+
+def test_dataframe_groupby_expanding_apply(
+    pandarallel_init, func_dataframe_groupby_expanding_apply, df_size
+):
+    df = pd.DataFrame(
+        dict(a=np.random.randint(1, 10, df_size), b=np.random.rand(df_size))
+    )
+
+    res = (
+        df.groupby("a")
+        .b.expanding()
+        .apply(func_dataframe_groupby_expanding_apply, raw=False)
+    )
+    res_parallel = (
+        df.groupby("a")
+        .b.expanding()
+        .parallel_apply(func_dataframe_groupby_expanding_apply, raw=False)
     )
     res.equals(res_parallel)
