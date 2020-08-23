@@ -7,11 +7,11 @@ from multiprocessing import Manager, Pool, cpu_count
 from tempfile import NamedTemporaryFile
 from time import time
 
-import dill
 from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy
 from pandas.core.window import Rolling, RollingGroupby
 
+import dill
 from pandarallel.data_types.dataframe import DataFrame as DF
 from pandarallel.data_types.dataframe_groupby import DataFrameGroupBy as DFGB
 from pandarallel.data_types.rolling_groupby import RollingGroupBy as RGB
