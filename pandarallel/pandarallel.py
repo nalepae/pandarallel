@@ -3,7 +3,7 @@
 import os
 import pickle
 from itertools import count
-from multiprocessing import Manager, Pool, cpu_count
+from multiprocessing import get_context
 from tempfile import NamedTemporaryFile
 from time import time
 
@@ -21,8 +21,12 @@ from pandarallel.utils.inliner import inline
 from pandarallel.utils.progress_bars import get_progress_bars, is_notebook_lab
 from pandarallel.utils.tools import ERROR, INPUT_FILE_READ, PROGRESSION, VALUE
 
+# Python 3.8 on MacOS by default uses "spawn" instead of "fork" as start method for new
+# processes, which is incompatible with pandarallel. We force it to use "fork" method.
+context = get_context("fork")
+
 # By default, Pandarallel use all available CPUs
-NB_WORKERS = cpu_count()
+NB_WORKERS = context.cpu_count()
 
 # Prefix and suffix for files used with Memory File System
 PREFIX = "pandarallel_"
@@ -420,7 +424,7 @@ def parallelize(
         nb_columns = len(data.columns) if progress_bar == PROGRESS_IN_FUNC_MUL else None
         worker_meta_args = get_worker_meta_args(data)
         reduce_meta_args = get_reduce_meta_args(data)
-        manager = Manager()
+        manager = context.Manager()
         queue = manager.Queue()
 
         workers_args, chunk_lengths, input_files, output_files = get_workers_args(
@@ -438,7 +442,7 @@ def parallelize(
         nb_workers = len(chunk_lengths)
 
         try:
-            pool = Pool(
+            pool = context.Pool(
                 nb_workers, worker_init, (prepare_worker(use_memory_fs)(worker),),
             )
 
