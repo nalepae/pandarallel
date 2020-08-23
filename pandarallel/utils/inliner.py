@@ -411,7 +411,7 @@ def inline(pre_func: FunctionType, func: FunctionType, pre_func_arguments: dict)
     function.
 
     `pre_func` should not have a return statement (else a ValueError is raised).
-    `pre_func_arguments` keys should be identical as `func` arguments names else a
+    `pre_func_arguments` keys should be identical as `pre_func` arguments names else a
     TypeError is raised.
 
     This approach takes less CPU instructions than the standard decorator approach.
