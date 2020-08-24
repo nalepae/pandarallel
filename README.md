@@ -90,6 +90,7 @@ apply/map, `args`, `args1`, `args2` some arguments, and `col_name` a column name
 | `df.applymap(func)`                                     | `df.parallel_applymap(func)`                                     |
 | `df.groupby(args).apply(func)`                          | `df.groupby(args).parallel_apply(func)`                          |
 | `df.groupby(args1).col_name.rolling(args2).apply(func)` | `df.groupby(args1).col_name.rolling(args2).parallel_apply(func)` |
+| `df.groupby(args1).col_name.expanding(args2).apply(func)` | `df.groupby(args1).col_name.expanding(args2).parallel_apply(func)` |
 | `series.map(func)`                                      | `series.parallel_map(func)`                                      |
 | `series.apply(func)`                                    | `series.parallel_apply(func)`                                    |
 | `series.rolling(args).apply(func)`                      | `series.rolling(args).parallel_apply(func)`                      |

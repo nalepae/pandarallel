@@ -9,12 +9,13 @@ from time import time
 
 from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy
-from pandas.core.window import Rolling, RollingGroupby
+from pandas.core.window import Rolling, RollingGroupby, ExpandingGroupby
 
 import dill
 from pandarallel.data_types.dataframe import DataFrame as DF
 from pandarallel.data_types.dataframe_groupby import DataFrameGroupBy as DFGB
 from pandarallel.data_types.rolling_groupby import RollingGroupBy as RGB
+from pandarallel.data_types.expanding_groupby import ExpandingGroupBy as EGB
 from pandarallel.data_types.series import Series as S
 from pandarallel.data_types.series_rolling import SeriesRolling as SR
 from pandarallel.utils.inliner import inline
@@ -599,3 +600,8 @@ class pandarallel:
         args = bargs_prog_worker + (RGB.get_chunks, RGB.worker, RGB.reduce)
         kwargs = dict(get_worker_meta_args=RGB.att2value)
         RollingGroupby.parallel_apply = parallelize(*args, **kwargs)
+
+        # Expanding GroupBy
+        args = bargs_prog_worker + (EGB.get_chunks, EGB.worker, EGB.reduce)
+        kwargs = dict(get_worker_meta_args=EGB.att2value)
+        ExpandingGroupby.parallel_apply = parallelize(*args, **kwargs)
