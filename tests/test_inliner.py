@@ -194,6 +194,10 @@ def test_are_functions_equivalent():
 
 
 def test_shift_instruction():
+    transitions = {1: 3, 2: 5, 3: 6}
+    byte_source = inliner.OpCode.LOAD_CONST
+    byte_dest = inliner.OpCode.STORE_FAST
+
     python_version = sys.version_info
     if not (python_version.major == 3 and python_version.minor in (5, 6, 7)):
         with pytest.raises(SystemError):
@@ -207,6 +211,9 @@ def test_shift_instruction():
 
 
 def test_shift_instructions():
+    transitions = {1: 3, 2: 5, 3: 6}
+    byte_source = inliner.OpCode.LOAD_CONST
+    byte_dest = inliner.OpCode.STORE_FAST
     python_version = sys.version_info
     if not (python_version.major == 3 and python_version.minor in (5, 6, 7)):
         with pytest.raises(SystemError):
@@ -372,6 +379,10 @@ def test_shift_instructions():
 
 
 def test_pin_arguments():
+    transitions = {1: 3, 2: 5, 3: 6}
+    byte_source = inliner.OpCode.LOAD_CONST
+    byte_dest = inliner.OpCode.STORE_FAST
+
     python_version = sys.version_info
     if not (python_version.major == 3 and python_version.minor in (5, 6, 7)):
         with pytest.raises(SystemError):
@@ -402,6 +413,10 @@ def test_pin_arguments():
 
 
 def test_inline():
+    transitions = {1: 3, 2: 5, 3: 6}
+    byte_source = inliner.OpCode.LOAD_CONST
+    byte_dest = inliner.OpCode.STORE_FAST
+
     python_version = sys.version_info
     if not (python_version.major == 3 and python_version.minor in (5, 6, 7)):
         with pytest.raises(SystemError):
