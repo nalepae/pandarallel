@@ -6,6 +6,7 @@ import pytest
 from pandarallel.utils import inliner
 from types import CodeType, FunctionType
 
+
 def test_remove_duplicates():
     tuple_ = (3, 1, 2, 2, 1, 4)
     expected_output = (3, 1, 2, 4)
@@ -15,7 +16,7 @@ def test_remove_duplicates():
 
 def test_int2python_bytes():
     python_version = sys.version_info
-    if not (python_version.major == 3 and python_version.minor in (5, 6, 7)):
+    if not (python_version.major == 3 and python_version.minor in (5, 6, 7, 8)):
         with pytest.raises(SystemError):
             inliner.int2python_bytes(4)
         return
@@ -41,7 +42,7 @@ def test_int2python_bytes():
 
 def test_python_ints2int():
     python_version = sys.version_info
-    if not (python_version.major == 3 and python_version.minor in (5, 6, 7)):
+    if not (python_version.major == 3 and python_version.minor in (5, 6, 7, 8)):
         with pytest.raises(SystemError):
             inliner.int2python_bytes(4)
         return
@@ -76,7 +77,7 @@ def test_get_instructions():
         print(x, y)
 
     python_version = sys.version_info
-    if not (python_version.major == 3 and python_version.minor in (5, 6, 7)):
+    if not (python_version.major == 3 and python_version.minor in (5, 6, 7, 8)):
         with pytest.raises(SystemError):
             inliner.get_instructions(function)
         return
@@ -120,7 +121,7 @@ def test_has_no_return():
             return
 
     python_version = sys.version_info
-    if not (python_version.major == 3 and python_version.minor in (5, 6, 7)):
+    if not (python_version.major == 3 and python_version.minor in (5, 6, 7, 8)):
         with pytest.raises(SystemError):
             inliner.has_no_return(func_return_nothing)
         return
@@ -133,6 +134,7 @@ def test_has_no_return():
 def test_has_duplicates():
     assert not inliner.has_duplicates([1, 3, 2, 4])
     assert inliner.has_duplicates([1, 3, 2, 3])
+
 
 def test_get_transitions():
     with pytest.raises(ValueError):
@@ -155,7 +157,8 @@ def test_get_b_transitions():
     byte_dest = inliner.OpCode.STORE_FAST
 
     python_version = sys.version_info
-    if not (python_version.major == 3 and python_version.minor in (5, 6, 7)):
+
+    if not (python_version.major == 3 and python_version.minor in (5, 6, 7, 8)):
         with pytest.raises(SystemError):
             inliner.get_b_transitions(transitions, byte_source, byte_dest)
         return
@@ -199,7 +202,7 @@ def test_shift_instruction():
     byte_dest = inliner.OpCode.STORE_FAST
 
     python_version = sys.version_info
-    if not (python_version.major == 3 and python_version.minor in (5, 6, 7)):
+    if not (python_version.major == 3 and python_version.minor in (5, 6, 7, 8)):
         with pytest.raises(SystemError):
             inliner.get_b_transitions(transitions, byte_source, byte_dest)
         return
@@ -214,8 +217,10 @@ def test_shift_instructions():
     transitions = {1: 3, 2: 5, 3: 6}
     byte_source = inliner.OpCode.LOAD_CONST
     byte_dest = inliner.OpCode.STORE_FAST
+
     python_version = sys.version_info
-    if not (python_version.major == 3 and python_version.minor in (5, 6, 7)):
+
+    if not (python_version.major == 3 and python_version.minor in (5, 6, 7, 8)):
         with pytest.raises(SystemError):
             inliner.get_b_transitions(transitions, byte_source, byte_dest)
         return
@@ -384,7 +389,8 @@ def test_pin_arguments():
     byte_dest = inliner.OpCode.STORE_FAST
 
     python_version = sys.version_info
-    if not (python_version.major == 3 and python_version.minor in (5, 6, 7)):
+
+    if not (python_version.major == 3 and python_version.minor in (5, 6, 7, 8)):
         with pytest.raises(SystemError):
             inliner.get_b_transitions(transitions, byte_source, byte_dest)
         return
@@ -418,7 +424,8 @@ def test_inline():
     byte_dest = inliner.OpCode.STORE_FAST
 
     python_version = sys.version_info
-    if not (python_version.major == 3 and python_version.minor in (5, 6, 7)):
+
+    if not (python_version.major == 3 and python_version.minor in (5, 6, 7, 8)):
         with pytest.raises(SystemError):
             inliner.get_b_transitions(transitions, byte_source, byte_dest)
         return

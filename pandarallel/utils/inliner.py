@@ -24,12 +24,12 @@ class OpCode:
 
 
 def ensure_python_version(function):
-    """Raise SystemError if Python version not in 3.{5, 6, 7}"""
+    """Raise SystemError if Python version not in 3.{5, 6, 7, 8}"""
 
     def wrapper(*args, **kwargs):
         python_version = sys.version_info
-        if not (python_version.major == 3 and python_version.minor in (5, 6, 7)):
-            raise SystemError("Python version should be 3.{5, 6, 7}")
+        if not (python_version.major == 3 and python_version.minor in (5, 6, 7, 8)):
+            raise SystemError("Python version should be 3.{5, 6, 7, 8}")
 
         return function(*args, **kwargs)
 
@@ -384,7 +384,31 @@ def pin_arguments(func: FunctionType, arguments: dict):
 
     nfcode = new_func.__code__
 
+    python_version = sys.version_info
+
+    if python_version.minor != 8:
+        new_func.__code__ = CodeType(
+            0,
+            0,
+            len(new_co_varnames),
+            nfcode.co_stacksize,
+            nfcode.co_flags,
+            new_co_code,
+            new_co_consts,
+            nfcode.co_names,
+            new_co_varnames,
+            nfcode.co_filename,
+            nfcode.co_name,
+            nfcode.co_firstlineno,
+            nfcode.co_lnotab,
+            nfcode.co_freevars,
+            nfcode.co_cellvars,
+        )
+
+        return new_func
+
     new_func.__code__ = CodeType(
+        0,
         0,
         0,
         len(new_co_varnames),
@@ -492,8 +516,32 @@ def inline(pre_func: FunctionType, func: FunctionType, pre_func_arguments: dict)
 
     nfcode = new_func.__code__
 
+    python_version = sys.version_info
+
+    if python_version.minor != 8:
+        new_func.__code__ = CodeType(
+            nfcode.co_argcount,
+            nfcode.co_kwonlyargcount,
+            len(new_co_varnames),
+            nfcode.co_stacksize,
+            nfcode.co_flags,
+            new_co_code,
+            new_co_consts,
+            new_co_names,
+            new_co_varnames,
+            nfcode.co_filename,
+            nfcode.co_name,
+            nfcode.co_firstlineno,
+            nfcode.co_lnotab,
+            nfcode.co_freevars,
+            nfcode.co_cellvars,
+        )
+
+        return new_func
+
     new_func.__code__ = CodeType(
         nfcode.co_argcount,
+        nfcode.co_posonlyargcount,
         nfcode.co_kwonlyargcount,
         len(new_co_varnames),
         nfcode.co_stacksize,
