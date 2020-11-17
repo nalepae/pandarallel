@@ -232,7 +232,7 @@ def get_workers_args(
     args,
     kwargs,
 ):
-    """This function is run on the MASTER.
+    """This function runs on the MASTER.
 
     If Memory File System is used:
     1. Create temporary files in Memory File System
@@ -278,7 +278,7 @@ def get_workers_args(
                     ".",
                     " Please also remove all files beginning with 'pandarallel_' in the",
                     "`/dev/shm` directory. If you have troubles with your web browser,",
-                    "these troubles should deseapper after cleaning `/dev/shm`.",
+                    "these troubles should disappear after cleaning `/dev/shm`.",
                 )
             )
             raise OSError(msg)
@@ -347,7 +347,7 @@ def get_workers_result(
     output_files,
     map_result,
 ):
-    """Wait for the workers result while eventually display progress bars."""
+    """Wait for the workers' results while eventually display progress bars."""
     if show_progress_bar:
         if show_progress_bar == PROGRESS_IN_FUNC_MUL:
             chunk_lengths = [
@@ -415,8 +415,8 @@ def parallelize(
     """Master function.
     1. Split data into chunks
     2. Send chunks to workers
-    3. Wait for the workers results (while displaying a progress bar if needed)
-    4. One results are available, combine them
+    3. Wait for the workers' results (while displaying a progress bar if needed)
+    4. Once results are available, combine them
     5. Return combined results to the user
     """
 
@@ -520,10 +520,10 @@ class pandarallel:
             process and workers, especially for big data.
 
             Memory file system is considered as available only if the
-            directory `/dev/shm` exists and if the user has read an write
-            rights on it.
+            directory `/dev/shm` exists and if the user has read and write
+            permission on it.
 
-            Basicaly memory file system is only available on some Linux
+            Basically memory file system is only available on some Linux
             distributions (including Ubuntu)
         """
 
