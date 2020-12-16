@@ -20,7 +20,7 @@ On Linux & macOS, nothing special has to be done.
 
 ## Warning
 
-- Parallelization has a cost (instanciating new processes, sending data via shared memory, ...), so parallelization is efficient only if the amount of calculation to parallelize is high enough. For very little amount of data, using parallelization is not always worth it.
+- Parallelization has a cost (instantiating new processes, sending data via shared memory, ...), so parallelization is efficient only if the amount of calculation to parallelize is high enough. For very little amount of data, using parallelization is not always worth it.
 
 ## Examples
 
