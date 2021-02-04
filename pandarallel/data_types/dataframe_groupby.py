@@ -1,6 +1,6 @@
 import itertools
 import pandas as pd
-from pandarallel.utils.tools import chunk
+from pandarallel.utils.tools import chunk, df_indexed_like
 
 
 class DataFrameGroupBy:
@@ -33,7 +33,7 @@ class DataFrameGroupBy:
         for key, df in tuples:
             res = func(df, *args, **kwargs)
             results.append(res)
-            mutated.append(not pd.core.groupby.ops._is_indexed_like(res, df.axes))
+            mutated.append(not df_indexed_like(res, df.axes))
             keys.append(key)
 
         return zip(keys, results, mutated)

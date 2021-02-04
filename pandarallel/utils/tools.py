@@ -1,4 +1,6 @@
 import itertools as _itertools
+from pandas import DataFrame, Index
+from typing import List
 
 INPUT_FILE_READ, PROGRESSION, VALUE, ERROR = list(range(4))
 
@@ -52,3 +54,30 @@ def chunk(nb_item, nb_chunks, start_offset=0):
         slice(max(0, begin - start_offset), end)
         for begin, end in zip(shifted_accumulated, accumulated)
     ]
+
+
+def df_indexed_like(df: DataFrame, axes: List[Index]) -> bool:
+    """
+    Returns whether a data frame is indexed in the way specified by the
+    provided axes.
+
+    Used by DataFrameGroupBy to determine whether a group has been modified.
+
+    Function adapted from pandas.core.groupby.ops._is_indexed_like
+
+    Parameters
+    ----------
+    df : DataFrame
+        The data frame in question
+
+    axes : List[Index]
+        The axes to which the data frame is compared
+
+    Returns
+    -------
+    Whether or not the data frame is indexed in the same wa as the axes.
+    """
+    if isinstance(df, DataFrame):
+        return df.axes[0].equals(axes[0])
+
+    return False
