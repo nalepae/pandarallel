@@ -13,8 +13,16 @@ class DataFrameGroupBy:
         results = itertools.chain.from_iterable(results)
         keys, values, mutated = zip(*results)
         mutated = any(mutated)
+        
+        # GH #150
+        pd_version = tuple(map(int, pd.__version__.split('.')))
+        if pd_version < (1.3.0):
+            args = df_grouped._selected_obj, keys, values
+        else:
+            args = keys, values
+            
         return df_grouped._wrap_applied_output(
-            keys, values, not_indexed_same=df_grouped.mutated or mutated
+            *args, not_indexed_same=df_grouped.mutated or mutated
         )
 
     @staticmethod
