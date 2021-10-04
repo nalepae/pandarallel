@@ -4,7 +4,7 @@ install_requires = ["dill"]
 
 setup(
     name="pandarallel",
-    version="1.5.2",
+    version="1.5.3",
     python_requires=">=3.5",
     packages=find_packages(),
     author="Manu NALEPA",
