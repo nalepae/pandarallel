@@ -15,11 +15,11 @@ class DataFrameGroupBy:
         mutated = any(mutated)
         
         # GH #150
-        pd_version = tuple(map(int, pd.__version__.split('.')))
-        if pd_version < (1.3.0):
-            args = df_grouped._selected_obj, keys, values
-        else:
+        pd_version = tuple(map(int, pd.__version__.split('.')[:2]))
+        if pd_version < (1.3):
             args = keys, values
+        else:
+            args = df_grouped._selected_obj, keys, values
             
         return df_grouped._wrap_applied_output(
             *args, not_indexed_same=df_grouped.mutated or mutated
