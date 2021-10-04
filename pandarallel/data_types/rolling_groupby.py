@@ -14,8 +14,15 @@ class RollingGroupBy:
 
     @staticmethod
     def get_chunks(nb_workers, rolling_groupby, *args, **kwargs):
-        chunks = chunk(len(rolling_groupby._groupby), nb_workers)
-        iterator = iter(rolling_groupby._groupby)
+        # GH #152
+        pd_version = tuple(map(int, pd.__version__.split('.')[:2]))
+        if pd_version < (1, 3):
+            groupby = rolling_groupby._groupby
+        else:
+            groupby = rolling_groupby._selected_obj
+            
+        chunks = chunk(len(groupby), nb_workers)
+        iterator = iter(groupby)
 
         for chunk_ in chunks:
             yield [next(iterator) for _ in range(chunk_.stop - chunk_.start)]
