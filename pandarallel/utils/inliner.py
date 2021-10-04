@@ -28,8 +28,8 @@ def ensure_python_version(function):
 
     def wrapper(*args, **kwargs):
         python_version = sys.version_info
-        if not (python_version.major == 3 and python_version.minor in (5, 6, 7, 8)):
-            raise SystemError("Python version should be 3.{5, 6, 7, 8}")
+        if not (python_version.major == 3 and python_version.minor in (5, 6, 7, 8, 9)):
+            raise SystemError("Python version should be 3.{5, 6, 7, 8, 9}")
 
         return function(*args, **kwargs)
 
@@ -386,7 +386,7 @@ def pin_arguments(func: FunctionType, arguments: dict):
 
     python_version = sys.version_info
 
-    if python_version.minor != 8:
+    if python_version.minor < 8:
         new_func.__code__ = CodeType(
             0,
             0,
@@ -518,7 +518,7 @@ def inline(pre_func: FunctionType, func: FunctionType, pre_func_arguments: dict)
 
     python_version = sys.version_info
 
-    if python_version.minor != 8:
+    if python_version.minor < 8:
         new_func.__code__ = CodeType(
             nfcode.co_argcount,
             nfcode.co_kwonlyargcount,
