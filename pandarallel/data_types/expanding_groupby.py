@@ -14,8 +14,14 @@ class ExpandingGroupBy:
 
     @staticmethod
     def get_chunks(nb_workers, expanding_groupby, *args, **kwargs):
-        chunks = chunk(len(expanding_groupby._groupby), nb_workers)
-        iterator = iter(expanding_groupby._groupby)
+        pd_version = tuple(map(int, pd.__version__.split('.')[:2]))
+        if pd_version < (1, 3):
+            groupby = expanding_groupby._groupby
+        else:
+            groupby = expanding_groupby._selected_obj
+            
+        chunks = chunk(len(groupby), nb_workers)
+        iterator = iter(groupby)
 
         for chunk_ in chunks:
             yield [next(iterator) for _ in range(chunk_.stop - chunk_.start)]
