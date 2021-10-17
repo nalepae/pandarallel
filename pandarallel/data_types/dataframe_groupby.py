@@ -27,7 +27,7 @@ class DataFrameGroupBy:
 
     @staticmethod
     def get_chunks(nb_workers, df_grouped, *args, **kwargs):
-        chunks = chunk(len(df_grouped), nb_workers)
+        chunks = chunk(df_grouped.ngroups, nb_workers)
         iterator = iter(df_grouped)
 
         for chunk_ in chunks:
