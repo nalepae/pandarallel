@@ -1,4 +1,3 @@
-import itertools
 from datetime import timedelta
 
 import pandas as pd
@@ -14,8 +13,21 @@ class RollingGroupBy:
 
     @staticmethod
     def get_chunks(nb_workers, rolling_groupby, *args, **kwargs):
-        chunks = chunk(len(rolling_groupby._groupby), nb_workers)
-        iterator = iter(rolling_groupby._groupby)
+        pandas_version = tuple((int(item) for item in pd.__version__.split(".")))
+
+        nb_items = (
+            rolling_groupby._grouper.ngroups
+            if pandas_version >= (1, 3)
+            else len(rolling_groupby._groupby)
+        )
+
+        chunks = chunk(nb_items, nb_workers)
+
+        iterator = (
+            rolling_groupby._grouper.get_iterator(rolling_groupby.obj)
+            if pandas_version > (1, 3)
+            else iter(rolling_groupby._groupby)
+        )
 
         for chunk_ in chunks:
             yield [next(iterator) for _ in range(chunk_.stop - chunk_.start)]
@@ -41,6 +53,8 @@ class RollingGroupBy:
     ):
         # TODO: See if this pd.concat is avoidable
         results = []
+
+        attribute2value.pop("_grouper", None)
 
         for iteration, (name, df) in enumerate(tuples):
             item = df.rolling(**attribute2value).apply(func, *args, **kwargs)
