@@ -18,11 +18,13 @@ class DataFrameGroupBy:
         pd_version = tuple(map(int, pd.__version__.split('.')[:2]))
         if pd_version < (1, 3):
             args = keys, values
-        else:
+        elif pd_version < (1, 4):
             args = df_grouped._selected_obj, keys, values
+        else:
+            args = df_grouped._selected_obj, values
             
         return df_grouped._wrap_applied_output(
-            *args, not_indexed_same=df_grouped.mutated or mutated
+            *args, not_indexed_same = df_grouped.mutated or mutated
         )
 
     @staticmethod
