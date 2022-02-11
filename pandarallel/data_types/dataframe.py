@@ -2,19 +2,21 @@ import pandas as pd
 from pandarallel.utils.tools import chunk
 
 
+def _parse_axis_from_kwargs(kwargs):
+    axis = kwargs.get("axis", 0)
+    if axis == "index":
+        axis = 0
+    elif axis == "columns":
+        axis = 1
+    return axis
+
+
 class DataFrame:
-    @staticmethod
-    def reduce(results, _):
-        return pd.concat(results, copy=False)
 
     class Apply:
         @staticmethod
         def get_chunks(nb_workers, df, *args, **kwargs):
-            axis = kwargs.get("axis", 0)
-            if axis == "index":
-                axis = 0
-            elif axis == "columns":
-                axis = 1
+            axis = _parse_axis_from_kwargs(kwargs)
 
             opposite_axis = 1 - axis
 
@@ -30,6 +32,17 @@ class DataFrame:
         ):
             return df.apply(func, *args, **kwargs)
 
+        @staticmethod
+        def get_reduce_meta_args(_, kwargs):
+            axis = _parse_axis_from_kwargs(kwargs)
+            return abs(axis - 1)
+
+        @staticmethod
+        def reduce(results, axis):
+            if all([isinstance(ir, pd.Series) for ir in results]):
+                axis = 0
+            return pd.concat(results, copy=False, axis=axis)
+
     class ApplyMap:
         @staticmethod
         def get_chunks(nb_workers, df, *_):
@@ -39,3 +52,7 @@ class DataFrame:
         @staticmethod
         def worker(df, _index, _meta_args, _progress_bar, _queue, func, *_):
             return df.applymap(func)
+
+        @staticmethod
+        def reduce(results, _):
+            return pd.concat(results, copy=False)

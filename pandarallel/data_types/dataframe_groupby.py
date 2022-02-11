@@ -5,7 +5,7 @@ from pandarallel.utils.tools import chunk, df_indexed_like
 
 class DataFrameGroupBy:
     @staticmethod
-    def get_reduce_meta_args(df_grouped):
+    def get_reduce_meta_args(df_grouped, _):
         return df_grouped
 
     @staticmethod

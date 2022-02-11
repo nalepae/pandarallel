@@ -248,18 +248,20 @@ def get_workers_args(
     skipped. For step 6., paths are not returned.
     """
 
-    def dump_and_get_lenght(chunk, input_file):
+    def dump_and_get_lenght(chunk, input_file, kwargs):
         with open(input_file.name, "wb") as file:
             pickle.dump(chunk, file)
+        # axis = kwargs.get('axis', 1)
 
         return len(chunk)
+        # return chunk.shape[axis - 1]
 
     if use_memory_fs:
         input_files = create_temp_files(nb_workers)
 
         try:
             chunk_lengths = [
-                dump_and_get_lenght(chunk, input_file)
+                dump_and_get_lenght(chunk, input_file, kwargs)
                 for chunk, input_file in zip(chunks, input_files)
             ]
 
@@ -409,8 +411,8 @@ def parallelize(
     get_chunks,
     worker,
     reduce,
-    get_worker_meta_args=lambda _: dict(),
-    get_reduce_meta_args=lambda _: dict(),
+    get_worker_meta_args=None,
+    get_reduce_meta_args=None,
 ):
     """Master function.
     1. Split data into chunks
@@ -420,13 +422,16 @@ def parallelize(
     5. Return combined results to the user
     """
 
+
+
     def closure(data, func, *args, **kwargs):
         chunks = get_chunks(nb_requested_workers, data, *args, **kwargs)
         nb_columns = len(data.columns) if progress_bar == PROGRESS_IN_FUNC_MUL else None
-        worker_meta_args = get_worker_meta_args(data)
-        reduce_meta_args = get_reduce_meta_args(data)
+        worker_meta_args = get_worker_meta_args(data) if get_worker_meta_args is not None else dict()
+        reduce_meta_args = get_reduce_meta_args(data, kwargs) if get_reduce_meta_args is not None else dict()
         manager = context.Manager()
         queue = manager.Queue()
+
 
         workers_args, chunk_lengths, input_files, output_files = get_workers_args(
             use_memory_fs,
@@ -461,7 +466,6 @@ def parallelize(
                 output_files,
                 map_result,
             )
-
             return reduce(results, reduce_meta_args)
 
         finally:
@@ -568,13 +572,14 @@ class pandarallel:
         bargs_prog_worker = (nbw, use_memory_fs, progress_in_worker)
 
         # DataFrame
-        args = bargs_prog_func + (DF.Apply.get_chunks, DF.Apply.worker, DF.reduce)
-        DataFrame.parallel_apply = parallelize(*args)
+        args = bargs_prog_func + (DF.Apply.get_chunks, DF.Apply.worker, DF.Apply.reduce)
+        kwargs = dict(get_reduce_meta_args=DF.Apply.get_reduce_meta_args)
+        DataFrame.parallel_apply = parallelize(*args, **kwargs)
 
         args = bargs_prog_func_mul + (
             DF.ApplyMap.get_chunks,
             DF.ApplyMap.worker,
-            DF.reduce,
+            DF.ApplyMap.reduce,
         )
 
         DataFrame.parallel_applymap = parallelize(*args)
