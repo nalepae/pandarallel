@@ -450,11 +450,12 @@ def inline(pre_func: FunctionType, func: FunctionType, pre_func_arguments: dict)
         z = x + 2 * y
         return z ** 2
 
-    The returned function corresponds to:
+    The returned function if `pre_fun_arguments == {"b": "foo", "c": "bar"}
+    corresponds to:
 
     def inlined(x, y):
         a = "hello"
-        print(a)
+        print(a + " " + "foo" + " " + "bar")
         z = x + 2 * y
         return z ** 2
     """
