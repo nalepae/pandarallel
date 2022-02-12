@@ -1,6 +1,5 @@
 import pandas as pd
-
-from pandarallel.utils.tools import chunk, PROGRESSION
+from pandarallel.utils.tools import PROGRESSION, chunk
 
 
 class ExpandingGroupBy:

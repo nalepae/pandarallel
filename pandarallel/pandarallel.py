@@ -7,15 +7,15 @@ from multiprocessing import get_context
 from tempfile import NamedTemporaryFile
 from time import time
 
+import dill
 from pandas import DataFrame, Series
 from pandas.core.groupby import DataFrameGroupBy
-from pandas.core.window import Rolling, RollingGroupby, ExpandingGroupby
+from pandas.core.window import ExpandingGroupby, Rolling, RollingGroupby
 
-import dill
 from pandarallel.data_types.dataframe import DataFrame as DF
 from pandarallel.data_types.dataframe_groupby import DataFrameGroupBy as DFGB
-from pandarallel.data_types.rolling_groupby import RollingGroupBy as RGB
 from pandarallel.data_types.expanding_groupby import ExpandingGroupBy as EGB
+from pandarallel.data_types.rolling_groupby import RollingGroupBy as RGB
 from pandarallel.data_types.series import Series as S
 from pandarallel.data_types.series_rolling import SeriesRolling as SR
 from pandarallel.utils.inliner import inline
@@ -444,7 +444,9 @@ def parallelize(
 
         try:
             pool = context.Pool(
-                nb_workers, worker_init, (prepare_worker(use_memory_fs)(worker),),
+                nb_workers,
+                worker_init,
+                (prepare_worker(use_memory_fs)(worker),),
             )
 
             map_result = pool.map_async(global_worker, workers_args)

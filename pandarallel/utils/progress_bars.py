@@ -95,7 +95,7 @@ class ProgressBarsNotebookLab:
         maxs - List containing the max value of each progress bar
         """
         from IPython.display import display
-        from ipywidgets import HBox, VBox, IntProgress, Label
+        from ipywidgets import HBox, IntProgress, Label, VBox
 
         self.__bars = [
             HBox(

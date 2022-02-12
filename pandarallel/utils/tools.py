@@ -1,6 +1,7 @@
 import itertools as _itertools
-from pandas import DataFrame, Index
 from typing import List
+
+from pandas import DataFrame, Index
 
 INPUT_FILE_READ, PROGRESSION, VALUE, ERROR = list(range(4))
 
