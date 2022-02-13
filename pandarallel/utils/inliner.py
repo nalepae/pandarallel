@@ -1,8 +1,8 @@
+import ast
 import dis
-import re
+import inspect
 import sys
-from inspect import signature
-from itertools import chain, tee
+from itertools import tee
 from types import CodeType, FunctionType
 from typing import Any, Dict, Iterable, List, Tuple
 
@@ -315,8 +315,9 @@ def shift_instructions(instructions: Tuple[bytes], qty: int) -> Tuple[bytes]:
     )
 
 
-@ensure_python_version
-def pin_arguments(func: FunctionType, arguments: dict):
+def pin_arguments(
+    func: FunctionType, immutable_arguments: dict, mutable_arguments: dict
+):
     """Transform `func` in a function with no arguments.
 
     Example:
@@ -327,7 +328,8 @@ def pin_arguments(func: FunctionType, arguments: dict):
 
         return b
 
-    The function returned by pin_arguments(func, {"a": 10, "b": 11}) is equivalent to:
+    The function returned by pin_arguments(func, {"a": 10, "b": 11}, {}) is equivalent
+    to:
 
     def pinned_func():
         c = 4
@@ -337,100 +339,50 @@ def pin_arguments(func: FunctionType, arguments: dict):
 
     This function is in some ways equivalent to functools.partials but with a faster
     runtime.
-
-    `arguments` keys should be identical as `func` arguments names else a TypeError is
-    raised.
     """
 
-    if signature(func).parameters.keys() != set(arguments):
-        raise TypeError("`arguments` and `func` arguments do not correspond")
+    class Visitor(ast.NodeTransformer):
+        def visit_Name(self, node):
+            if not node.id in immutable_arguments:
+                ast.NodeVisitor.generic_visit(self, node)
+                return node
 
-    func_code = func.__code__
-    func_co_consts = func_code.co_consts
-    func_co_varnames = func_code.co_varnames
+            value = immutable_arguments[node.id]
 
-    new_co_consts = remove_duplicates(func_co_consts + tuple(arguments.values()))
-    new_co_varnames = tuple(item for item in func_co_varnames if item not in arguments)
+            new_node = ast.Constant(value)
+            ast.copy_location(new_node, node)
+            ast.NodeVisitor.generic_visit(self, node)
+            return new_node
 
-    trans_co_varnames2_co_consts = {
-        func_co_varnames.index(key): new_co_consts.index(value)
-        for key, value in arguments.items()
-    }
+    func_code = inspect.getsource(func)
+    func_ast = ast.parse(func_code)
 
-    trans_co_varnames = get_transitions(func_co_varnames, new_co_varnames)
+    pinned_func_ast = Visitor().visit(func_ast)
 
-    transitions = {
-        **get_b_transitions(
-            trans_co_varnames2_co_consts, OpCode.LOAD_FAST, OpCode.LOAD_CONST
-        ),
-        **get_b_transitions(trans_co_varnames, OpCode.LOAD_FAST, OpCode.LOAD_FAST),
-        **get_b_transitions(trans_co_varnames, OpCode.STORE_FAST, OpCode.STORE_FAST),
-    }
+    body, *trash = pinned_func_ast.body
+    assert not trash
 
-    func_instructions = get_instructions(func)
-    new_func_instructions = tuple(
-        transitions.get(instruction, instruction) for instruction in func_instructions
-    )
+    body.args.args = []
+    namespace = {}
 
-    new_co_code = b"".join(new_func_instructions)
+    compiled = compile(func_ast, filename="pandarallel", mode="exec")
+    exec(compiled, namespace)
 
-    new_func = FunctionType(
-        func.__code__,
-        func.__globals__,
-        func.__name__,
-        func.__defaults__,
-        func.__closure__,
-    )
+    pinned_func = namespace[body.name]
 
-    nfcode = new_func.__code__
+    for key, value in mutable_arguments.items():
+            pinned_func.__globals__[key] = value
 
-    python_version = sys.version_info
-
-    if python_version.minor < 8:
-        new_func.__code__ = CodeType(
-            0,
-            0,
-            len(new_co_varnames),
-            nfcode.co_stacksize,
-            nfcode.co_flags,
-            new_co_code,
-            new_co_consts,
-            nfcode.co_names,
-            new_co_varnames,
-            nfcode.co_filename,
-            nfcode.co_name,
-            nfcode.co_firstlineno,
-            nfcode.co_lnotab,
-            nfcode.co_freevars,
-            nfcode.co_cellvars,
-        )
-
-        return new_func
-
-    new_func.__code__ = CodeType(
-        0,
-        0,
-        0,
-        len(new_co_varnames),
-        nfcode.co_stacksize,
-        nfcode.co_flags,
-        new_co_code,
-        new_co_consts,
-        nfcode.co_names,
-        new_co_varnames,
-        nfcode.co_filename,
-        nfcode.co_name,
-        nfcode.co_firstlineno,
-        nfcode.co_lnotab,
-        nfcode.co_freevars,
-        nfcode.co_cellvars,
-    )
-
-    return new_func
+    return pinned_func
 
 
 @ensure_python_version
-def inline(pre_func: FunctionType, func: FunctionType, pre_func_arguments: dict):
+def inline(
+    pre_func: FunctionType,
+    func: FunctionType,
+    immutable_pre_func_arguments: dict,
+    mutable_pre_func_arguments: dict,
+):
     """Insert `prefunc` at the beginning of `func` and return the corresponding
     function.
 
@@ -468,10 +420,15 @@ def inline(pre_func: FunctionType, func: FunctionType, pre_func_arguments: dict)
         func.__closure__,
     )
 
+    for key, value in mutable_pre_func_arguments.items():
+        new_func.__globals__[key] = value
+
     if not has_no_return(pre_func):
         raise ValueError("`pre_func` returns something")
 
-    pinned_pre_func = pin_arguments(pre_func, pre_func_arguments)
+    pinned_pre_func = pin_arguments(
+        pre_func, immutable_pre_func_arguments, mutable_pre_func_arguments
+    )
     pinned_pre_func_code = pinned_pre_func.__code__
     pinned_pre_func_co_consts = pinned_pre_func_code.co_consts
     pinned_pre_func_co_names = pinned_pre_func_code.co_names
