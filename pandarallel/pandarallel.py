@@ -206,14 +206,17 @@ def progress_wrapper(progress_bar, queue, index, chunk_size):
                 progress_pre_func,
                 func,
                 dict(
-                    queue=queue,
                     index=index,
-                    counter=counter,
                     progression=PROGRESSION,
+                ),
+                dict(
+                    counter=counter,
+                    queue=queue,
                     state=state,
                     time=time,
                 ),
             )
+
             return wrapped_func
 
         return func
