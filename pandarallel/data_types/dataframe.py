@@ -1,5 +1,16 @@
+from itertools import count
+from time import time as pandarallel_time
+from time import time
+
 import pandas as pd
 from pandarallel.utils.tools import chunk
+
+
+class ProgressState:
+    def __init__(self, chunk_size):
+        self.last_put_iteration = 0
+        self.next_put_iteration = max(chunk_size // 100, 1)
+        self.last_put_time = pandarallel_time()
 
 
 class DataFrame:
@@ -28,6 +39,10 @@ class DataFrame:
         def worker(
             df, _index, _meta_args, _progress_bar, _queue, func, *args, **kwargs
         ):
+            func.__globals__["counter"] = count()
+            func.__globals__["state"] = ProgressState(len(df))
+            func.__globals__["pandarallel_time"] = time
+            func.__globals__["queue"] = _progress_bar
             return df.apply(func, *args, **kwargs)
 
     class ApplyMap:

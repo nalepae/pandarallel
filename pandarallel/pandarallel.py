@@ -5,7 +5,7 @@ import pickle
 from itertools import count
 from multiprocessing import get_context
 from tempfile import NamedTemporaryFile
-from time import time
+from time import time as pandarallel_time
 
 import dill
 from pandas import DataFrame, Series
@@ -42,9 +42,10 @@ NO_PROGRESS, PROGRESS_IN_WORKER, PROGRESS_IN_FUNC, PROGRESS_IN_FUNC_MUL = list(r
 
 
 class ProgressState:
-    last_put_iteration = None
-    next_put_iteration = None
-    last_put_time = None
+    def __init__(self, chunk_size):
+        self.last_put_iteration = 0
+        self.next_put_iteration = max(chunk_size // 100, 1)
+        self.last_put_time = pandarallel_time()
 
 
 # The goal of this part is to let Pandarallel to serialize functions which are not defined
@@ -168,7 +169,7 @@ def create_temp_files(nb_files):
     ]
 
 
-def progress_pre_func(queue, index, counter, progression, state, time):
+def progress_pre_func(queue, index, counter, progression, state):
     """Send progress to the MASTER about every 250 ms.
 
     The estimation system is implemented to avoid to call time() to often,
@@ -177,7 +178,7 @@ def progress_pre_func(queue, index, counter, progression, state, time):
     iteration = next(counter)
 
     if iteration == state.next_put_iteration:
-        time_now = time()
+        time_now = pandarallel_time()
         queue.put_nowait((progression, (index, iteration)))
 
         delta_t = time_now - state.last_put_time
@@ -195,31 +196,27 @@ def progress_wrapper(progress_bar, queue, index, chunk_size):
     (and context switch) which is time consuming.
     """
     counter = count()
-    state = ProgressState()
-    state.last_put_iteration = 0
-    state.next_put_iteration = max(chunk_size // 100, 1)
-    state.last_put_time = time()
+    state = ProgressState(chunk_size)
 
     def wrapper(func):
-        if progress_bar:
-            wrapped_func = inline(
-                progress_pre_func,
-                func,
-                dict(
-                    index=index,
-                    progression=PROGRESSION,
-                ),
-                dict(
-                    counter=counter,
-                    queue=queue,
-                    state=state,
-                    time=time,
-                ),
-            )
+        if not progress_bar:
+            return func
 
-            return wrapped_func
+        wrapped_func = inline(
+            progress_pre_func,
+            func,
+            dict(
+                index=index,
+                progression=PROGRESSION,
+            ),
+            dict(
+                counter=counter,
+                queue=queue,
+                state=state,
+            ),
+        )
 
-        return func
+        return wrapped_func
 
     return wrapper
 
