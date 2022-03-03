@@ -1,3 +1,3 @@
-__version__ = "1.5.5"
+from .core import pandarallel
 
-from .pandarallel import pandarallel
+__version__ = "1.5.6"

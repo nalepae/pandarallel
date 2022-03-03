@@ -1,10 +1,8 @@
 import math
-from datetime import datetime
 
 import numpy as np
 import pandas as pd
 import pytest
-
 from pandarallel import pandarallel
 
 
@@ -127,15 +125,17 @@ def func_dataframe_groupby_rolling_apply(request):
 @pytest.fixture(params=("named", "anonymous"))
 def func_dataframe_groupby_expanding_apply(request):
     def func(x):
-        return (x.multiply(pd.Series(range(1, len(x)), dtype='float'))).sum()
+        return (x.multiply(pd.Series(range(1, len(x)), dtype="float"))).sum()
 
     return dict(
         named=func,
-        anonymous=lambda x: (x.multiply(pd.Series(range(1, len(x)), dtype='float'))).sum(),
+        anonymous=lambda x: (
+            x.multiply(pd.Series(range(1, len(x)), dtype="float"))
+        ).sum(),
     )[request.param]
 
 
-@pytest.fixture()
+@pytest.fixture
 def pandarallel_init(progress_bar, use_memory_fs):
     pandarallel.initialize(
         progress_bar=progress_bar, use_memory_fs=use_memory_fs, nb_workers=2
@@ -171,6 +171,13 @@ def test_dataframe_apply_axis_1(pandarallel_init, func_dataframe_apply_axis_1, d
     res = df.apply(func_dataframe_apply_axis_1, axis=1)
     res_parallel = df.parallel_apply(func_dataframe_apply_axis_1, axis=1)
     assert res.equals(res_parallel)
+
+
+def test_dataframe_apply_invalid_axis(pandarallel_init):
+    df = pd.DataFrame(dict(a=[1, 2, 3, 4]))
+
+    with pytest.raises(ValueError):
+        df.parallel_apply(lambda x: x, axis="invalid")
 
 
 def test_dataframe_applymap(pandarallel_init, func_dataframe_applymap, df_size):
@@ -261,24 +268,6 @@ def test_dataframe_groupby_rolling_apply(
         df.groupby("a")
         .b.rolling(4)
         .parallel_apply(func_dataframe_groupby_rolling_apply, raw=False)
-    )
-    res.equals(res_parallel)
-
-
-def test_datetime_rolling(pandarallel_init):
-    df = pd.DataFrame(
-        [
-            {"datetime": datetime.now(), "A": 1, "B": 7},
-            {"datetime": datetime.now(), "A": 2, "B": 4},
-        ]
-    )
-
-    res = df.set_index("datetime").groupby("A").rolling("1D").B.apply(sum, raw=True)
-    res_parallel = (
-        df.set_index("datetime")
-        .groupby("A")
-        .rolling("1D")
-        .B.parallel_apply(sum, raw=True)
     )
     res.equals(res_parallel)
 

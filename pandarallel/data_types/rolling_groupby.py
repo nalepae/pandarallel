@@ -1,67 +1,98 @@
-from datetime import timedelta
+import multiprocessing
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Tuple
 
 import pandas as pd
-from pandas.tseries.frequencies import to_offset
+from pandas.core.window.rolling import RollingGroupby as PandasRollingGroupby
 
-from pandarallel.utils.tools import chunk, PROGRESSION
+from ..utils import WorkerStatus, chunk, get_pandas_version
+from .generic import DataType
 
 
 class RollingGroupBy:
-    @staticmethod
-    def reduce(results, _):
-        return pd.concat(results, copy=False)
+    class Apply(DataType):
+        @staticmethod
+        def get_chunks(
+            nb_workers: int, data: PandasRollingGroupby, *args, **kwargs
+        ) -> Iterator[List[Tuple[int, pd.DataFrame]]]:
+            pandas_version = get_pandas_version()
 
-    @staticmethod
-    def get_chunks(nb_workers, rolling_groupby, *args, **kwargs):
-        pandas_version = tuple((int(item) for item in pd.__version__.split(".")))
+            nb_items = (
+                len(data._groupby) if pandas_version < (1, 3) else data._grouper.ngroups
+            )
 
-        nb_items = (
-            rolling_groupby._grouper.ngroups
-            if pandas_version >= (1, 3)
-            else len(rolling_groupby._groupby)
-        )
+            chunks = chunk(nb_items, nb_workers)
 
-        chunks = chunk(nb_items, nb_workers)
+            iterator = (
+                iter(data._groupby)
+                if pandas_version <= (1, 3)
+                else data._grouper.get_iterator(data.obj)
+            )
 
-        iterator = (
-            rolling_groupby._grouper.get_iterator(rolling_groupby.obj)
-            if pandas_version > (1, 3)
-            else iter(rolling_groupby._groupby)
-        )
+            for chunk_ in chunks:
+                yield [next(iterator) for _ in range(chunk_.stop - chunk_.start)]
 
-        for chunk_ in chunks:
-            yield [next(iterator) for _ in range(chunk_.stop - chunk_.start)]
+        @staticmethod
+        def get_work_extra(data: PandasRollingGroupby):
+            attributes = {
+                attribute: getattr(data, attribute) for attribute in data._attributes
+            }
 
-    @staticmethod
-    def att2value(rolling):
-        attributes = {
-            attribute: getattr(rolling, attribute) for attribute in rolling._attributes
-        }
+            return {"attributes": attributes}
 
-        # Fix window for win_type = freq, because then it was defined by the user in a format like '1D' and refers
-        # to a time window rolling
-        if "win_type" in attributes and attributes["win_type"] == "freq":
-            window = to_offset(timedelta(microseconds=int(attributes["window"] / 1000)))
-            attributes["window"] = window
-            attributes.pop("win_type")
+        @staticmethod
+        def work(
+            data: List[Tuple[int, pd.DataFrame]],
+            user_defined_function: Callable,
+            user_defined_function_args: tuple,
+            user_defined_function_kwargs: Dict[str, Any],
+            extra: Dict[str, Any],
+        ) -> List[pd.DataFrame]:
+            show_progress_bars: bool = extra["show_progress_bars"]
+            master_workers_queue: multiprocessing.Queue = extra["master_workers_queue"]
+            worker_index: int = extra["worker_index"]
 
-        return attributes
+            def compute_result(
+                iteration: int,
+                attributes: Dict[str, Any],
+                index: int,
+                df: pd.DataFrame,
+                user_defined_function: Callable,
+                user_defined_function_args: tuple,
+                user_defined_function_kwargs: Dict[str, Any],
+            ) -> pd.DataFrame:
+                item = df.rolling(**attributes).apply(
+                    user_defined_function,
+                    *user_defined_function_args,
+                    **user_defined_function_kwargs
+                )
 
-    @staticmethod
-    def worker(
-        tuples, index, attribute2value, queue, progress_bar, func, *args, **kwargs
-    ):
-        # TODO: See if this pd.concat is avoidable
-        results = []
+                item.index = pd.MultiIndex.from_product([[index], item.index])
 
-        attribute2value.pop("_grouper", None)
+                if show_progress_bars:
+                    master_workers_queue.put_nowait(
+                        (worker_index, WorkerStatus.Running, iteration)
+                    )
 
-        for iteration, (name, df) in enumerate(tuples):
-            item = df.rolling(**attribute2value).apply(func, *args, **kwargs)
-            item.index = pd.MultiIndex.from_product([[name], item.index])
-            results.append(item)
+                return item
 
-            if progress_bar:
-                queue.put_nowait((PROGRESSION, (index, iteration)))
+            attributes = extra["attributes"]
+            attributes.pop("_grouper", None)
 
-        return pd.concat(results)
+            dfs = (
+                compute_result(
+                    iteration,
+                    attributes,
+                    index,
+                    df,
+                    user_defined_function,
+                    user_defined_function_args,
+                    user_defined_function_kwargs,
+                )
+                for iteration, (index, df) in enumerate(data)
+            )
+
+            return pd.concat(dfs)
+
+        @staticmethod
+        def reduce(datas: Iterable[pd.DataFrame], extra: Dict[str, Any]) -> pd.Series:
+            return pd.concat(datas, copy=False)

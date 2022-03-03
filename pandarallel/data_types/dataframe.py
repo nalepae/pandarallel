@@ -1,41 +1,69 @@
+from typing import Any, Callable, Dict, Iterable, Iterator
+
 import pandas as pd
-from pandarallel.utils.tools import chunk
+
+from ..utils import chunk
+from .generic import DataType
 
 
 class DataFrame:
-    @staticmethod
-    def reduce(results, _):
-        return pd.concat(results, copy=False)
-
-    class Apply:
+    class Apply(DataType):
         @staticmethod
-        def get_chunks(nb_workers, df, *args, **kwargs):
-            axis = kwargs.get("axis", 0)
-            if axis == "index":
-                axis = 0
-            elif axis == "columns":
-                axis = 1
+        def get_chunks(
+            nb_workers: int, data: pd.DataFrame, **kwargs
+        ) -> Iterator[pd.DataFrame]:
+            user_defined_function_kwargs = kwargs["user_defined_function_kwargs"]
+            axis = user_defined_function_kwargs.get("axis", 0)
 
-            opposite_axis = 1 - axis
+            if axis not in {0, 1, "index", "columns"}:
+                raise ValueError(f"No axis named {axis} for object type DataFrame")
 
-            for chunk_ in chunk(df.shape[opposite_axis], nb_workers):
-                if axis == 1:
-                    yield df.iloc[chunk_]
-                else:
-                    yield df.iloc[:, chunk_]
+            axis_int = {0: 0, 1: 1, "index": 0, "columns": 1}[axis]
+            opposite_axis_int = 1 - axis_int
+
+            for chunk_ in chunk(data.shape[opposite_axis_int], nb_workers):
+                yield data.iloc[chunk_] if axis_int == 1 else data.iloc[:, chunk_]
 
         @staticmethod
-        def worker(
-            df, _index, _meta_args, _progress_bar, _queue, func, *args, **kwargs
-        ):
-            return df.apply(func, *args, **kwargs)
+        def work(
+            data: pd.DataFrame,
+            user_defined_function: Callable,
+            user_defined_function_args: tuple,
+            user_defined_function_kwargs: Dict[str, Any],
+            extra: Dict[str, Any],
+        ) -> pd.DataFrame:
+            return data.apply(
+                user_defined_function,
+                *user_defined_function_args,
+                **user_defined_function_kwargs,
+            )
 
-    class ApplyMap:
         @staticmethod
-        def get_chunks(nb_workers, df, *_):
-            for chunk_ in chunk(df.shape[0], nb_workers):
-                yield df.iloc[chunk_]
+        def reduce(
+            datas: Iterable[pd.DataFrame], extra: Dict[str, Any]
+        ) -> pd.DataFrame:
+            return pd.concat(datas, copy=False)
+
+    class ApplyMap(DataType):
+        @staticmethod
+        def get_chunks(
+            nb_workers: int, data: pd.DataFrame, **kwargs
+        ) -> Iterator[pd.DataFrame]:
+            for chunk_ in chunk(data.shape[0], nb_workers):
+                yield data.iloc[chunk_]
 
         @staticmethod
-        def worker(df, _index, _meta_args, _progress_bar, _queue, func, *_):
-            return df.applymap(func)
+        def work(
+            data: pd.DataFrame,
+            user_defined_function: Callable,
+            user_defined_function_args: tuple,
+            user_defined_function_kwargs: Dict[str, Any],
+            extra: Dict[str, Any],
+        ) -> pd.DataFrame:
+            return data.applymap(user_defined_function)
+
+        @staticmethod
+        def reduce(
+            datas: Iterable[pd.DataFrame], extra: Dict[str, Any]
+        ) -> pd.DataFrame:
+            return pd.concat(datas, copy=False)

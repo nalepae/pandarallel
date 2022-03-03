@@ -1,11 +1,12 @@
-import itertools as _itertools
+import itertools
+from enum import Enum
+from typing import List, Tuple
+
+import pandas as pd
 from pandas import DataFrame, Index
-from typing import List
-
-INPUT_FILE_READ, PROGRESSION, VALUE, ERROR = list(range(4))
 
 
-def chunk(nb_item, nb_chunks, start_offset=0):
+def chunk(nb_item: int, nb_chunks: int, start_offset=0) -> List[slice]:
     """
     Return `nb_chunks` slices of approximatively `nb_item / nb_chunks` each.
 
@@ -24,13 +25,11 @@ def chunk(nb_item, nb_chunks, start_offset=0):
     -------
     A list of slices
 
-
     Examples
     --------
-    >>> chunks = _pandarallel._chunk(103, 4)
+    >>> chunks = chunk(103, 4)
     >>> chunks
-    [slice(0, 26, None), slice(26, 52, None), slice(52, 78, None),
-     slice(78, 103, None)]
+    [slice(0, 26, None), slice(26, 52, None), slice(52, 78, None), slice(78, 103, None)]
     """
     if nb_item <= nb_chunks:
         return [slice(max(0, idx - start_offset), idx + 1) for idx in range(nb_item)]
@@ -45,7 +44,7 @@ def chunk(nb_item, nb_chunks, start_offset=0):
         quotient + remainder for quotient, remainder in zip(quotients, remainders)
     ]
 
-    accumulated = list(_itertools.accumulate(nb_elems_per_chunk))
+    accumulated = list(itertools.accumulate(nb_elems_per_chunk))
     shifted_accumulated = accumulated.copy()
     shifted_accumulated.insert(0, 0)
     shifted_accumulated.pop()
@@ -81,3 +80,14 @@ def df_indexed_like(df: DataFrame, axes: List[Index]) -> bool:
         return df.axes[0].equals(axes[0])
 
     return False
+
+
+def get_pandas_version() -> Tuple[int, int]:
+    major_str, minor_str, *_ = pd.__version__.split(".")
+    return int(major_str), int(minor_str)
+
+
+class WorkerStatus(int, Enum):
+    Running = 0
+    Success = 1
+    Error = 2
