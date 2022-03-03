@@ -309,6 +309,7 @@ def progress_wrapper(
     (and context switch) which is time consuming.
     """
     counter = count()
+<<<<<<< HEAD
     state = ProgressState(chunk_size)
 
     def wrapper(func: Callable) -> Callable:
@@ -328,6 +329,31 @@ def progress_wrapper(
                 state=state,
             ),
         )
+=======
+    state = ProgressState()
+    state.last_put_iteration = 0
+    state.next_put_iteration = max(chunk_size // 100, 1)
+    state.last_put_time = time()
+
+    def wrapper(func):
+        if progress_bar:
+            wrapped_func = inline(
+                progress_pre_func,
+                func,
+                dict(
+                    index=index,
+                    progression=PROGRESSION,
+                ),
+                dict(
+                    counter=counter,
+                    queue=queue,
+                    state=state,
+                    time=time,
+                ),
+            )
+
+            return wrapped_func
+>>>>>>> 27f2fa3da23e02d80a9d068704f411f16af7cb18
 
         return wrapped_func
 
