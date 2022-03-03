@@ -42,11 +42,12 @@ class ProgressState:
 
 def is_notebook_lab() -> bool:
     try:
-        shell = get_ipython().__class__.__name__  # type: ignore
+        shell: str = get_ipython().__class__.__name__  # type: ignore
 
-        # ZMQInteractiveShell: Jupyter notebook/lab or qtconsole
+        # Shell: Google Colab
         # TerminalInteractiveShell: Terminal running IPython
-        return shell == "ZMQInteractiveShell"
+        # ZMQInteractiveShell: Jupyter notebook/lab or qtconsole
+        return shell in {"Shell", "ZMQInteractiveShell"}
     except NameError:
         # Probably standard Python interpreter
         return False
