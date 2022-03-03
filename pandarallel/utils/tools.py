@@ -6,7 +6,7 @@ from pandas import DataFrame, Index
 INPUT_FILE_READ, PROGRESSION, VALUE, ERROR = list(range(4))
 
 
-def chunk(nb_item, nb_chunks, start_offset=0):
+def chunk(nb_item: int, nb_chunks: int, start_offset=0):
     """
     Return `nb_chunks` slices of approximatively `nb_item / nb_chunks` each.
 

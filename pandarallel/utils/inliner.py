@@ -1,11 +1,21 @@
 import ast
 import inspect
-from types import FunctionType
+import multiprocessing
+from itertools import count
+from time import time
+from typing import Callable
+
+
+class ProgressState:
+    def __init__(self, chunk_size: int) -> None:
+        self.last_put_iteration = 0
+        self.next_put_iteration = max(chunk_size // 100, 1)
+        self.last_put_time = time()
 
 
 def pin_arguments(
-    func: FunctionType, immutable_arguments: dict, mutable_arguments: dict
-):
+    func: Callable, immutable_arguments: dict, mutable_arguments: dict
+) -> ast.expr:
     """Return the AST of `func` transformed in a function with no arguments.
 
     Example:
@@ -24,9 +34,6 @@ def pin_arguments(
         print(str(10) + str(c))
 
         return 11
-
-    This function is in some ways equivalent to functools.partials but with a faster
-    runtime.
     """
 
     class Visitor(ast.NodeTransformer):
@@ -54,11 +61,11 @@ def pin_arguments(
 
 
 def inline(
-    pre_func: FunctionType,
-    func: FunctionType,
+    pre_func: Callable[[multiprocessing.Queue, int, count, int, ProgressState], None],
+    func: Callable,
     immutable_pre_func_arguments: dict,
     mutable_pre_func_arguments: dict,
-):
+) -> Callable:
     """Insert `prefunc` at the beginning of `func` and return the corresponding
     function.
 
@@ -93,16 +100,16 @@ def inline(
     func_body, *trash = func_ast.body
     assert not trash
 
-    func_body.body = pinned_pre_func_ast_body_body + func_body.body
+    func_body.body = pinned_pre_func_ast_body_body + func_body.body  # type: ignore
 
-    namespace = {}
+    namespace: dict = {}
 
     compiled = compile(func_ast, filename="pandarallel", mode="exec")
     exec(compiled, namespace)
 
-    inlined_func = namespace[func_body.name]
+    inlined_func = namespace[func_body.name]  # type: ignore
 
-    for key, value in func.__globals__.items():
+    for key, value in func.__globals__.items():  # type: ignore
         inlined_func.__globals__[key] = value
 
     return inlined_func

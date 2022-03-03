@@ -20,11 +20,13 @@ class DataFrame:
 
     class Apply:
         @staticmethod
-        def get_chunks(nb_workers, df, *args, **kwargs):
+        def get_chunks(nb_workers, df, *_, **kwargs):
             axis = kwargs.get("axis", 0)
+
             if axis == "index":
                 axis = 0
-            elif axis == "columns":
+
+            if axis == "columns":
                 axis = 1
 
             opposite_axis = 1 - axis
@@ -37,13 +39,20 @@ class DataFrame:
 
         @staticmethod
         def worker(
-            df, _index, _meta_args, _progress_bar, _queue, func, *args, **kwargs
+            df,
+            _index,
+            _meta_args,
+            _progress_bar,
+            _queue,
+            func,
+            *func_args,
+            **func_kwargs
         ):
             func.__globals__["counter"] = count()
             func.__globals__["state"] = ProgressState(len(df))
             func.__globals__["pandarallel_time"] = time
             func.__globals__["queue"] = _progress_bar
-            return df.apply(func, *args, **kwargs)
+            return df.apply(func, *func_args, **func_kwargs)
 
     class ApplyMap:
         @staticmethod

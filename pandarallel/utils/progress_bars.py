@@ -1,36 +1,25 @@
+import os
 import shutil
 import sys
+from typing import List, Union
 
 MINIMUM_TERMINAL_WIDTH = 72
 
 
-def is_notebook_lab():
+def is_notebook_lab() -> bool:
     try:
-        shell = get_ipython().__class__.__name__
-        if shell == "ZMQInteractiveShell":
-            # Jupyter notebook/lab or qtconsole
-            return True
-        elif shell == "TerminalInteractiveShell":
-            # Terminal running IPython
-            return False
-        else:
-            # Other type (?)
-            return False
+        shell = get_ipython().__class__.__name__  # type: ignore
+
+        # ZMQInteractiveShell: Jupyter notebook/lab or qtconsole
+        # TerminalInteractiveShell: Terminal running IPython
+        return shell == "ZMQInteractiveShell"
     except NameError:
         # Probably standard Python interpreter
         return False
 
 
-def get_progress_bars(maxs):
-    return (
-        ProgressBarsNotebookLab(maxs)
-        if is_notebook_lab()
-        else ProgressBarsConsole(maxs)
-    )
-
-
 class ProgressBarsConsole:
-    def __init__(self, maxs):
+    def __init__(self, maxs: List[int]) -> None:
         self.__bars = [[0, max] for max in maxs]
         self.__width = self.__get_width()
 
@@ -39,7 +28,7 @@ class ProgressBarsConsole:
         sys.stdout.write("\n".join(self.__lines))
         sys.stdout.flush()
 
-    def __get_width(self):
+    def __get_width(self) -> int:
         try:
             columns = shutil.get_terminal_size().columns
             return max(MINIMUM_TERMINAL_WIDTH, columns - 1)
@@ -53,7 +42,7 @@ class ProgressBarsConsole:
         except:
             return MINIMUM_TERMINAL_WIDTH
 
-    def __remove_displayed_lines(self):
+    def __remove_displayed_lines(self) -> None:
         if len(self.__bars) >= 1:
             sys.stdout.write("\b" * len(self.__lines[-1]))
 
@@ -62,7 +51,7 @@ class ProgressBarsConsole:
 
         self.__lines = []
 
-    def __update_line(self, done, total):
+    def __update_line(self, done: int, total: int) -> str:
         percent = done / total
         bar = (":" * int(percent * 40)).ljust(40, " ")
         percent = round(percent * 100, 2)
@@ -70,10 +59,10 @@ class ProgressBarsConsole:
         ret = format.format(percent=percent, bar=bar, done=done, total=total)
         return ret[: self.__width].ljust(self.__width, " ")
 
-    def __update_lines(self):
+    def __update_lines(self) -> None:
         self.__lines = [self.__update_line(value, max) for value, max in self.__bars]
 
-    def update(self, values):
+    def update(self, values: List[int]) -> None:
         """Update a bar value.
         Positional arguments:
         values - The new values of each bar
@@ -89,7 +78,7 @@ class ProgressBarsConsole:
 
 
 class ProgressBarsNotebookLab:
-    def __init__(self, maxs):
+    def __init__(self, maxs: List[int]) -> None:
         """Initialization.
         Positional argument:
         maxs - List containing the max value of each progress bar
@@ -109,7 +98,7 @@ class ProgressBarsNotebookLab:
 
         display(VBox(self.__bars))
 
-    def update(self, values):
+    def update(self, values: List[int]) -> None:
         """Update a bar value.
         Positional arguments:
         values - The new values of each bar
@@ -125,7 +114,17 @@ class ProgressBarsNotebookLab:
 
             label.value = "{} / {}".format(value, bar.max)
 
-    def set_error(self, index):
+    def set_error(self, index: int) -> None:
         """Set a bar on error"""
         bar, _ = self.__bars[index].children
         bar.bar_style = "danger"
+
+
+def get_progress_bars(
+    maxs: List[int],
+) -> Union[ProgressBarsNotebookLab, ProgressBarsConsole]:
+    return (
+        ProgressBarsNotebookLab(maxs)
+        if is_notebook_lab()
+        else ProgressBarsConsole(maxs)
+    )
