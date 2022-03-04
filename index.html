@@ -248,13 +248,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#warnings" class="md-nav__link">
-    Warnings
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#examples" class="md-nav__link">
     Examples
   </a>
@@ -264,6 +257,13 @@
         <li class="md-nav__item">
   <a href="#benchmark" class="md-nav__link">
     Benchmark
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-should-i-user-pandas-pandarallel-or-pyspark" class="md-nav__link">
+    When should I user pandas, pandarallel or pyspark?
   </a>
   
 </li>
@@ -345,13 +345,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#warnings" class="md-nav__link">
-    Warnings
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#examples" class="md-nav__link">
     Examples
   </a>
@@ -361,6 +354,13 @@
         <li class="md-nav__item">
   <a href="#benchmark" class="md-nav__link">
     Benchmark
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-should-i-user-pandas-pandarallel-or-pyspark" class="md-nav__link">
+    When should I user pandas, pandarallel or pyspark?
   </a>
   
 </li>
@@ -463,14 +463,17 @@ get an rough idea of the remaining amount of computation to be done.</p>
 <p>On <strong>Windows</strong>, <code>pandarallel</code> will work only if the Python session
 (<code>python</code>, <code>ipython</code>, <code>jupyter notebook</code>, <code>jupyter lab</code>, ...) is executed from
 <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">Windows Subsystem for Linux (WSL)</a>.</p>
-<h2 id="warnings">Warnings</h2>
-<ul>
-<li>Parallelization has a cost (instantiating new processes, sending data via shared memory,
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Parallelization has a cost (instantiating new processes, sending data via shared memory,
   ...), so parallelization is efficient only if the amount of computation to parallelize
   is high enough. For very little amount of data, using parallelization is not always
-  worth it.</li>
-<li>Displaying progress bars has a cost and may slighly increase computation time.</li>
-</ul>
+  worth it.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Displaying progress bars has a cost and may slighly increase computation time.</p>
+</div>
 <h2 id="examples">Examples</h2>
 <p>An example of each API is available <a href="https://github.com/nalepae/pandarallel/blob/master/docs/examples.ipynb">here</a>.</p>
 <h2 id="benchmark">Benchmark</h2>
@@ -482,6 +485,28 @@ get an rough idea of the remaining amount of computation to be done.</p>
 </ul>
 <p><img alt="Benchmark" src="https://github.com/nalepae/pandarallel/blob/3d470139d409fc2cf61bab085298011fefe638c0/docs/standard_vs_parallel_4_cores.png?raw=true" /></p>
 <p>For those given examples, parallel operations run approximately 4x faster than the standard operations (except for <code>series.map</code> which runs only 3.2x faster).</p>
+<h2 id="when-should-i-user-pandas-pandarallel-or-pyspark">When should I user <code>pandas</code>, <code>pandarallel</code> or <code>pyspark</code>?</h2>
+<p>According to <a href="https://pandas.pydata.org/"><code>pandas</code> documentation</a>:</p>
+<blockquote>
+<p><code>pandas</code> is a fast, powerful, flexible and easy to use open source data analysis and
+manipulation tool,built on top of the Python programming language.</p>
+</blockquote>
+<p>The main <code>pandas</code> drawback is the fact it uses only one core of your computer, even if
+multiple cores are available.</p>
+<p><code>pandarallel</code> gets around this limitation by using all cores of your computer.
+But, in return, <code>pandarallel</code> need twice the memory that standard <code>pandas</code> operation
+would normally use.</p>
+<p>==&gt; <code>pandarallel</code> should <strong>NOT</strong> be used if your data cannot fit into memory with
+<code>pandas</code> itself. In such a case, <code>spark</code> (and its <code>python</code> layer <code>pyspark</code>)
+will be suitable.</p>
+<p>The main drawback of <code>spark</code> is that <code>spark</code> APIs are less convenient to user than
+<code>pandas</code> APIs (even if this is going better) and also you need a JVM (Java Virtual
+Machine) on your computer.</p>
+<p>However, with <code>spark</code> you can:</p>
+<ul>
+<li>Handle data much bigger than your memory</li>
+<li>Using a <code>spark</code> cluster, distribute your computation over multiple nodes.</li>
+</ul>
 
               
             </article>
