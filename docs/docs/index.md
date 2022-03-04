@@ -45,13 +45,16 @@ On **Windows**, `pandarallel` will work only if the Python session
 (`python`, `ipython`, `jupyter notebook`, `jupyter lab`, ...) is executed from
 [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
 
-## Warnings
+!!! warning
 
-- Parallelization has a cost (instantiating new processes, sending data via shared memory,
-  ...), so parallelization is efficient only if the amount of computation to parallelize
-  is high enough. For very little amount of data, using parallelization is not always
-  worth it.
-- Displaying progress bars has a cost and may slighly increase computation time.
+    Parallelization has a cost (instantiating new processes, sending data via shared memory,
+      ...), so parallelization is efficient only if the amount of computation to parallelize
+      is high enough. For very little amount of data, using parallelization is not always
+      worth it.
+
+!!! warning
+
+    Displaying progress bars has a cost and may slighly increase computation time.
 
 ## Examples
 
@@ -69,3 +72,30 @@ Computer used for this benchmark:
 ![Benchmark](https://github.com/nalepae/pandarallel/blob/3d470139d409fc2cf61bab085298011fefe638c0/docs/standard_vs_parallel_4_cores.png?raw=true)
 
 For those given examples, parallel operations run approximately 4x faster than the standard operations (except for `series.map` which runs only 3.2x faster).
+
+## When should I user `pandas`, `pandarallel` or `pyspark`?
+
+According to [`pandas` documentation](https://pandas.pydata.org/):
+
+> `pandas` is a fast, powerful, flexible and easy to use open source data analysis and
+> manipulation tool,built on top of the Python programming language.
+
+The main `pandas` drawback is the fact it uses only one core of your computer, even if
+multiple cores are available.
+
+`pandarallel` gets around this limitation by using all cores of your computer.
+But, in return, `pandarallel` need twice the memory that standard `pandas` operation
+would normally use.
+
+==> `pandarallel` should **NOT** be used if your data cannot fit into memory with
+`pandas` itself. In such a case, `spark` (and its `python` layer `pyspark`)
+will be suitable.
+
+The main drawback of `spark` is that `spark` APIs are less convenient to user than
+`pandas` APIs (even if this is going better) and also you need a JVM (Java Virtual
+Machine) on your computer.
+
+However, with `spark` you can:
+
+- Handle data much bigger than your memory
+- Using a `spark` cluster, distribute your computation over multiple nodes.
