@@ -1,0 +1,25 @@
+site_name: Pandaral·lel documentation
+site_description: A simple and efficient tool to parallelize Pandas operations on all available CPUs
+
+theme:
+  name: 'material'
+
+repo_name: 'nalepae/pandarallel'
+repo_url: 'https://github.com/nalepae/pandarallel'
+edit_uri: 'edit/master/docs/docs'
+extra:
+  repo_icon: 'github'
+
+nav:
+  - Home: 'index.md'
+  - User guide: 'user_guide.md'
+  - Troubleshooting: 'troubleshooting.md'
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
