@@ -55,6 +55,7 @@ def is_notebook_lab() -> bool:
 
 class ProgressBarsConsole(ProgressBars):
     def __init__(self, maxs: List[int], show: bool) -> None:
+        self.__show = show
         self.__bars = [[0, max] for max in maxs]
         self.__width = self.__get_width()
 
@@ -103,6 +104,9 @@ class ProgressBarsConsole(ProgressBars):
         Positional arguments:
         values - The new values of each bar
         """
+        if not self.__show:
+            return
+
         for index, value in enumerate(values):
             self.__bars[index][0] = value
 
