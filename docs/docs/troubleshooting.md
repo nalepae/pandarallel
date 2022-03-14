@@ -6,7 +6,7 @@ On Windows, because of the multiprocessing system (spawn), the function you send
 
 Example:
 
-❌ **Forbidden:**
+❌ **Forbidden**
 
 ```Python
 import math
@@ -16,7 +16,7 @@ def func(x):
     return math.sin(x.a**2) + math.sin(x.b**2)
 ```
 
-✅ **Valid:**
+✅ **Valid**
 
 ```Python
 def func(x):

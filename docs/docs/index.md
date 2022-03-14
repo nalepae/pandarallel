@@ -56,7 +56,7 @@ def func(x):
     return math.sin(x.a**2) + math.sin(x.b**2)
 ```
 
-✅ **Valid everywhere:**
+✅ **Valid everywhere**
 
 ```Python
 def func(x):
