@@ -41,9 +41,29 @@ get an rough idea of the remaining amount of computation to be done.
 
 On **Linux** & **macOS**, no special requirement.
 
-On **Windows**, `pandarallel` will work only if the Python session
-(`python`, `ipython`, `jupyter notebook`, `jupyter lab`, ...) is executed from
-[Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
+On **Windows**, because of the multiprocessing system (spawn), the function you send to
+`pandarallel` must be **self contained**, and should not depend on external resources.
+
+Example:
+
+**✅ Valid on Mac and Linux - ❌ Forbidden On Windows**
+
+```Python
+import math
+
+def func(x):
+    # Here, `math` is defined outside `func`. `func` is not self contained.
+    return math.sin(x.a**2) + math.sin(x.b**2)
+```
+
+✅ **Valid everywhere:**
+
+```Python
+def func(x):
+    # Here, `math` is defined inside `func`. `func` is self contained.
+    import math
+    return math.sin(x.a**2) + math.sin(x.b**2)
+```
 
 !!! warning
 

@@ -34,4 +34,7 @@ Be sure to check out the [documentation](https://nalepae.github.io/pandarallel).
 
 ## Examples
 
-An example of each available `pandas` API is available [here](https://github.com/nalepae/pandarallel/blob/master/docs/examples.ipynb).
+An example of each available `pandas` API is available:
+
+- For [Mac & Linux](https://github.com/nalepae/pandarallel/blob/master/docs/examples_mac_linux.ipynb)
+- For [Windows](https://github.com/nalepae/pandarallel/blob/master/docs/examples_windows.ipynb)
