@@ -40,42 +40,21 @@ PREFIX_INPUT = f"{PREFIX}_input_"
 PREFIX_OUTPUT = f"{PREFIX}_output_"
 SUFFIX = ".pickle"
 
-# The goal of this part is to let Pandarallel to serialize functions which are not defined
-# at the top level of the module (like DataFrame.Apply.worker). This trick is inspired by
-# this article: https://medium.com/@yasufumy/python-multiprocessing-c6d54107dd55
-# Warning: In this article, the trick is presented to be able to serialize lambda functions.
-# Even if Pandarallel is able to serialize lambda functions, it is only thanks to `dill`.
-_func = None
+# We use these classes decorators pattern instead of the classic one because of this:
+# https://www.stevenengelhardt.com/2013/01/16/python-multiprocessing-module-and-closures/
 
 
-def worker_init(func: Callable) -> None:
-    global _func
-    _func = func
+class WrapWorkFunctionForFileSystem:
+    def __init__(
+        self,
+        work_function: Callable[
+            [Any, Callable, tuple, Dict[str, Any], Dict[str, Any]], Any
+        ],
+    ) -> None:
+        self.work_function = work_function
 
-
-def global_worker(*args, **kwargs):
-    return _func(*args, **kwargs)
-
-
-def wrap_work_function_for_file_system(
-    work_function: Callable[
-        [Any, Callable, tuple, Dict[str, Any], Dict[str, Any]], Any
-    ],
-) -> Callable[
-    [
-        Path,
-        Path,
-        ProgressBarsType,
-        int,
-        multiprocessing.Queue,
-        bytes,
-        tuple,
-        Dict[str, Any],
-        Dict[str, Any],
-    ],
-    None,
-]:
-    def closure(
+    def __call__(
+        self,
         input_file_path: Path,
         output_file_path: Path,
         progress_bars_type: ProgressBarsType,
@@ -112,7 +91,7 @@ def wrap_work_function_for_file_system(
                 else user_defined_function
             )
 
-            result = work_function(
+            result = self.work_function(
                 data,
                 used_user_defined_function,
                 user_defined_function_args,
@@ -129,34 +108,25 @@ def wrap_work_function_for_file_system(
             master_workers_queue.put((worker_index, WorkerStatus.Error, None))
             raise
 
-    return closure
 
-
-def wrap_work_function_for_pipe(
-    work_function: Callable[
-        [
+class WrapWorkFunctionForPipe:
+    def __init__(
+        self,
+        work_function: Callable[
+            [
+                Any,
+                Callable,
+                tuple,
+                Dict[str, Any],
+                Dict[str, Any],
+            ],
             Any,
-            Callable,
-            tuple,
-            Dict[str, Any],
-            Dict[str, Any],
         ],
-        Any,
-    ],
-) -> Callable[
-    [
-        Any,
-        ProgressBarsType,
-        int,
-        multiprocessing.Queue,
-        bytes,
-        tuple,
-        Dict[str, Any],
-        Dict[str, Any],
-    ],
-    Any,
-]:
-    def closure(
+    ) -> None:
+        self.work_function = work_function
+
+    def __call__(
+        self,
         data: Any,
         progress_bars_type: ProgressBarsType,
         worker_index: int,
@@ -184,7 +154,7 @@ def wrap_work_function_for_pipe(
                 else user_defined_function
             )
 
-            results = work_function(
+            results = self.work_function(
                 data,
                 used_user_defined_function,
                 user_defined_function_args,
@@ -199,8 +169,6 @@ def wrap_work_function_for_pipe(
         except:
             master_workers_queue.put((worker_index, WorkerStatus.Error, None))
             raise
-
-    return closure
 
 
 def wrap_reduce_function_for_file_system(
@@ -243,7 +211,7 @@ def parallelize_with_memory_file_system(
         *user_defined_function_args: tuple,
         **user_defined_function_kwargs: Dict[str, Any],
     ):
-        wrapped_work_function = wrap_work_function_for_file_system(data_type.work)
+        wrapped_work_function = WrapWorkFunctionForFileSystem(data_type.work)
         wrapped_reduce_function = wrap_reduce_function_for_file_system(data_type.reduce)
 
         chunks = list(
@@ -322,8 +290,9 @@ def parallelize_with_memory_file_system(
                 ) in enumerate(zip(input_files, output_files))
             ]
 
-            pool = CONTEXT.Pool(nb_workers, worker_init, (wrapped_work_function,))
-            pool.starmap_async(global_worker, work_args_list)
+            pool = CONTEXT.Pool(nb_workers)
+            pool.starmap_async(wrapped_work_function, work_args_list)
+
             pool.close()
 
             generation = count()
@@ -381,7 +350,7 @@ def parallelize_with_pipe(
         *user_defined_function_args: tuple,
         **user_defined_function_kwargs: Dict[str, Any],
     ):
-        wrapped_work_function = wrap_work_function_for_pipe(data_type.work)
+        wrapped_work_function = WrapWorkFunctionForPipe(data_type.work)
         dilled_user_defined_function = dill.dumps(user_defined_function)
         manager: SyncManager = CONTEXT.Manager()
         master_workers_queue = manager.Queue()
@@ -435,8 +404,8 @@ def parallelize_with_pipe(
             for worker_index, chunk in enumerate(chunks)
         ]
 
-        pool = CONTEXT.Pool(nb_workers, worker_init, (wrapped_work_function,))
-        results_promise = pool.starmap_async(global_worker, work_args_list)
+        pool = CONTEXT.Pool(nb_workers)
+        results_promise = pool.starmap_async(wrapped_work_function, work_args_list)
         pool.close()
 
         generation = count()
