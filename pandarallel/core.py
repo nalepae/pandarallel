@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, Iterator, Optional, Tuple, Type, cast
 
 import dill
 import pandas as pd
+import psutil
 from pandas.core.groupby import DataFrameGroupBy as PandaDataFrameGroupBy
 from pandas.core.window.expanding import ExpandingGroupby as PandasExpandingGroupby
 from pandas.core.window.rolling import RollingGroupby as PandasRollingGroupby
@@ -32,7 +33,7 @@ CONTEXT = multiprocessing.get_context("spawn" if ON_WINDOWS else "fork")
 MEMORY_FS_ROOT = "/dev/shm"
 
 # By default, Pandarallel use all available CPUs
-NB_WORKERS = max(CONTEXT.cpu_count() // 2, 1)
+NB_PHYSICAL_CORES = psutil.cpu_count(logical=False)
 
 # Prefix and suffix for files used with Memory File System
 PREFIX = "pandarallel"
@@ -441,7 +442,7 @@ class pandarallel:
     def initialize(
         cls,
         shm_size_mb=None,
-        nb_workers=NB_WORKERS,
+        nb_workers=NB_PHYSICAL_CORES,
         progress_bar=False,
         verbose=2,
         use_memory_fs: Optional[bool] = None,
