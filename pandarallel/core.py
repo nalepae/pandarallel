@@ -1,4 +1,5 @@
 import multiprocessing
+import os
 import pickle
 from itertools import count
 from multiprocessing.managers import SyncManager
@@ -24,9 +25,8 @@ from .data_types import (
 from .progress_bars import ProgressBarsType, get_progress_bars, progress_wrapper
 from .utils import WorkerStatus
 
-# Python 3.8 on MacOS by default uses "spawn" instead of "fork" as start method for new
-# processes, which is incompatible with pandarallel. We force it to use "fork" method.
-CONTEXT = multiprocessing.get_context("fork")
+ON_WINDOWS = os.name == "nt"
+CONTEXT = multiprocessing.get_context("spawn" if ON_WINDOWS else "fork")
 
 # Root of Memory File System
 MEMORY_FS_ROOT = "/dev/shm"
@@ -478,6 +478,16 @@ class pandarallel:
             )
 
             print(message)
+
+            if ON_WINDOWS and verbose >= 2:
+                print()
+                print(
+                    (
+                        "WARNING: You are on Windows. If you detect any issue with "
+                        "pandarallel, be sure you checked out the Troubleshooting page:"
+                    )
+                )
+                print("https://nalepae.github.io/pandarallel/troubleshooting/")
 
         progress_bars_in_user_defined_function = (
             ProgressBarsType.InUserDefinedFunction
