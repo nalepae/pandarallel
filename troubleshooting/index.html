@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.4">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.5">
     
     
       
@@ -266,27 +266,48 @@
 
 <div class="admonition fail">
 <p class="admonition-title">Fail</p>
+<p>I am on Windows, and <code>pandarallel</code> does not work at all.</p>
+</div>
+<p>On Windows, because of the multiprocessing system (spawn), the function you send to pandarallel must be <strong>self contained</strong>, and should not depend on external resources.</p>
+<p>Example:</p>
+<p>❌ <strong>Forbidden:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">math</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="c1"># Here, `math` is defined outside `func`. `func` is not self contained.</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">a</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">b</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div>
+<p>✅ <strong>Valid:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="c1"># Here, `math` is defined inside `func`. `func` is self contained.</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="kn">import</span> <span class="nn">math</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">a</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">b</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div>
+<div class="admonition fail">
+<p class="admonition-title">Fail</p>
 <p>I have <code>8</code> CPUs but <code>pandarallel</code> uses by default only <code>4</code> workers, and there is no
 performance increase (and maybe a little performance decrease) if I manually set the
 number of workers to a number higher than <code>4</code>.</p>
 </div>
-<p><code>pandarallel</code> can only speed up computation until about the number of <strong>cores</strong> your
-computer has. The majority of recent CPUs (like Intel Core i7) uses hyperthreading.
-For example, a 4-core hyperthreaded CPU will show 8 CPUs to the operating system, but
-will <strong>really</strong> have only 4 physical computation units.</p>
-<p>On <strong>Ubuntu</strong>, you can get the number of cores with</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>grep -m <span class="m">1</span> <span class="s1">&#39;cpu cores&#39;</span> /proc/cpuinfo
+<p><code>pandarallel</code> can only speed up computation until about the number of
+<strong> physical cores</strong> your computer has. The majority of recent CPUs (like Intel Core i7)
+uses hyperthreading. For example, a 4-core hyperthreaded CPU will show 8 CPUs to the
+operating system, but will <strong>really</strong> have only 4 physical computation units.</p>
+<p>You can get the number of cores with</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span> <span class="nn">psutil</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">psutil</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">(</span><span class="n">logical</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </code></pre></div>
 <div class="admonition fail">
 <p class="admonition-title">Fail</p>
 <p>I use <code>jupyter lab</code> and instead of progress bars, I see these kind of things:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>VBox(children=(HBox(children=(IntProgress(value=0, description=&#39;0.00%&#39;, max=625000), Label(value=&#39;0 / 625000&#39;)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>VBox(children=(HBox(children=(IntProgress(value=0, description=&#39;0.00%&#39;, max=625000), Label(value=&#39;0 / 625000&#39;)
 </code></pre></div></p>
 </div>
 <p>Run the following 3 lines, and you should be able to see the progress bars:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a>pip install ipywidgets
-<a id="__codelineno-2-2" name="__codelineno-2-2"></a>jupyter nbextension <span class="nb">enable</span> --py widgetsnbextension
-<a id="__codelineno-2-3" name="__codelineno-2-3"></a>jupyter labextension install @jupyter-widgets/jupyterlab-manager
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pip install ipywidgets
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>jupyter nbextension <span class="nb">enable</span> --py widgetsnbextension
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>jupyter labextension install @jupyter-widgets/jupyterlab-manager
 </code></pre></div>
 <p>(You may also have to install <code>nodejs</code> if asked)</p>
 
@@ -342,7 +363,7 @@ will <strong>really</strong> have only 4 physical computation units.</p>
     <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.bd0b6b67.min.js"}</script>
     
     
-      <script src="../assets/javascripts/bundle.5413a266.min.js"></script>
+      <script src="../assets/javascripts/bundle.467223ff.min.js"></script>
       
     
   </body>
