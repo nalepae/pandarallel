@@ -205,6 +205,7 @@ def parallelize_with_memory_file_system(
     nb_requested_workers: int,
     data_type: Type[DataType],
     progress_bars_type: ProgressBarsType,
+    leave: bool = True,
 ):
     def closure(
         data: Any,
@@ -239,7 +240,7 @@ def parallelize_with_memory_file_system(
 
         show_progress_bars = progress_bars_type != ProgressBarsType.No
 
-        progress_bars = get_progress_bars(progresses_length, show_progress_bars)
+        progress_bars = get_progress_bars(progresses_length, show_progress_bars, leave)
         progresses = [0] * nb_workers
         workers_status = [WorkerStatus.Running] * nb_workers
 
@@ -344,6 +345,7 @@ def parallelize_with_pipe(
     nb_requested_workers: int,
     data_type: Type[DataType],
     progress_bars_type: ProgressBarsType,
+    leave: bool = True,
 ):
     def closure(
         data: Any,
@@ -380,7 +382,7 @@ def parallelize_with_pipe(
 
         show_progress_bars = progress_bars_type != ProgressBarsType.No
 
-        progress_bars = get_progress_bars(progresses_length, show_progress_bars)
+        progress_bars = get_progress_bars(progresses_length, show_progress_bars, leave)
         progresses = [0] * nb_workers
         workers_status = [WorkerStatus.Running] * nb_workers
 
@@ -446,6 +448,7 @@ class pandarallel:
         progress_bar=False,
         verbose=2,
         use_memory_fs: Optional[bool] = None,
+        leave: Optional[bool] = True,
     ) -> None:
         show_progress_bars = progress_bar
         is_memory_fs_available = Path(MEMORY_FS_ROOT).exists()
@@ -510,36 +513,37 @@ class pandarallel:
 
         # DataFrame
         pd.DataFrame.parallel_apply = parallelize(
-            nb_workers, DataFrame.Apply, progress_bars_in_user_defined_function
+            nb_workers, DataFrame.Apply, progress_bars_in_user_defined_function, leave
         )
         pd.DataFrame.parallel_applymap = parallelize(
             nb_workers,
             DataFrame.ApplyMap,
             progress_bars_in_user_defined_function_multiply_by_number_of_columns,
+            leave,
         )
 
         # DataFrame GroupBy
         PandaDataFrameGroupBy.parallel_apply = parallelize(
-            nb_workers, DataFrameGroupBy.Apply, progress_bars_in_user_defined_function
+            nb_workers, DataFrameGroupBy.Apply, progress_bars_in_user_defined_function, leave
         )
 
         # Expanding GroupBy
         PandasExpandingGroupby.parallel_apply = parallelize(
-            nb_workers, ExpandingGroupBy.Apply, progress_bars_in_work_function
+            nb_workers, ExpandingGroupBy.Apply, progress_bars_in_work_function, leave
         )
 
         # Rolling GroupBy
         PandasRollingGroupby.parallel_apply = parallelize(
-            nb_workers, RollingGroupBy.Apply, progress_bars_in_work_function
+            nb_workers, RollingGroupBy.Apply, progress_bars_in_work_function, leave
         )
 
         # Series
         pd.Series.parallel_apply = parallelize(
-            nb_workers, Series.Apply, progress_bars_in_user_defined_function
+            nb_workers, Series.Apply, progress_bars_in_user_defined_function, leave
         )
-        pd.Series.parallel_map = parallelize(nb_workers, Series.Map, show_progress_bars)
+        pd.Series.parallel_map = parallelize(nb_workers, Series.Map, show_progress_bars, leave)
 
         # Series Rolling
         pd.core.window.Rolling.parallel_apply = parallelize(
-            nb_workers, SeriesRolling.Apply, progress_bars_in_user_defined_function
+            nb_workers, SeriesRolling.Apply, progress_bars_in_user_defined_function, leave
         )
