@@ -37,6 +37,9 @@ This method takes 5 optional parameters:
     not available.
     * If set to `False`, `pandarallel` will use multiprocessing data transfer (pipe) to
     transfer data between the main process and workers.
+- `leave`: (bool, `True` by default): whether to keep the progress bar after running on a notebook or not.
+    * If set to `True`, will leave the notebook progress bar after running.
+    * If set to `False`, will delete the notebook progress bar after running.
 
 Using memory file system reduces data transfer time between the main process and
 workers, especially for big data.
