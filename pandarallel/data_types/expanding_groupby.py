@@ -24,7 +24,7 @@ class ExpandingGroupBy:
 
             iterator = (
                 iter(data._groupby)
-                if pandas_version <= (1, 3)
+                if pandas_version < (1, 3)
                 else data._grouper.get_iterator(data.obj)
             )
 
