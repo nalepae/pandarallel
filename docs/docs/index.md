@@ -78,11 +78,14 @@ def func(x):
 
 ## Examples
 
-An example of each API is available [here](https://github.com/nalepae/pandarallel/blob/master/docs/examples.ipynb).
+An example of each available `pandas` API is available:
+
+- For [Mac & Linux](https://github.com/nalepae/pandarallel/blob/master/docs/examples_mac_linux.ipynb)
+- For [Windows](https://github.com/nalepae/pandarallel/blob/master/docs/examples_windows.ipynb)
 
 ## Benchmark
 
-For [some examples](https://github.com/nalepae/pandarallel/blob/master/docs/examples.ipynb), here is the comparative benchmark with and without using Pandaral·lel.
+For some examples, here is the comparative benchmark with and without using Pandaral·lel.
 
 Computer used for this benchmark:
 
