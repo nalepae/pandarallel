@@ -1,15 +1,17 @@
-import multiprocessing
 import os
+import dill
 import pickle
+import psutil
+import multiprocessing
+import traceback
+
+import pandas as pd
+
 from itertools import count
 from multiprocessing.managers import SyncManager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Dict, Iterator, Optional, Tuple, Type, cast
-
-import dill
-import pandas as pd
-import psutil
 from pandas.core.groupby import DataFrameGroupBy as PandaDataFrameGroupBy
 from pandas.core.window.expanding import ExpandingGroupby as PandasExpandingGroupby
 from pandas.core.window.rolling import RollingGroupby as PandasRollingGroupby
@@ -105,8 +107,9 @@ class WrapWorkFunctionForFileSystem:
 
             master_workers_queue.put((worker_index, WorkerStatus.Success, None))
 
-        except:
-            master_workers_queue.put((worker_index, WorkerStatus.Error, None))
+        except Exception as excp:
+            err_msg = f"{excp}" + "\n" + traceback.format_exc()
+            master_workers_queue.put((worker_index, WorkerStatus.Error, err_msg))
             raise
 
 
@@ -318,8 +321,11 @@ def parallelize_with_memory_file_system(
                     if next(generation) % nb_workers == 0:
                         progress_bars.update(progresses)
                 elif worker_status == WorkerStatus.Error:
-                    progress_bars.set_error(worker_index)
+                    progress_bars.set_error(worker_index, payload)
                     progress_bars.update(progresses)
+
+            if any(w_s == WorkerStatus.Error for w_s in workers_status):
+                raise Exception("Exception during parallelization.")
 
             return wrapped_reduce_function(
                 (Path(output_file.name) for output_file in output_files),
