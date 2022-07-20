@@ -96,7 +96,7 @@ Computer used for this benchmark:
 
 For those given examples, parallel operations run approximately 4x faster than the standard operations (except for `series.map` which runs only 3.2x faster).
 
-## When should I user `pandas`, `pandarallel` or `pyspark`?
+## When should I use `pandas`, `pandarallel` or `pyspark`?
 
 According to [`pandas` documentation](https://pandas.pydata.org/):
 
