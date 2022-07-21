@@ -135,6 +135,26 @@ def func_dataframe_groupby_expanding_apply(request):
     )[request.param]
 
 
+@pytest.fixture(params=("named", "anonymous"))
+def func_dataframe_apply_axis_0_no_reduce(request):
+    def func(x):
+        return x
+
+    return dict(
+        named=func, anonymous=lambda x: x
+    )[request.param]
+
+
+@pytest.fixture(params=("named", "anonymous"))
+def func_dataframe_apply_axis_1_no_reduce(request):
+    def func(x):
+        return x**2
+
+    return dict(
+        named=func, anonymous=lambda x: x**2
+    )[request.param]
+
+
 @pytest.fixture
 def pandarallel_init(progress_bar, use_memory_fs):
     pandarallel.initialize(
@@ -290,3 +310,29 @@ def test_dataframe_groupby_expanding_apply(
         .parallel_apply(func_dataframe_groupby_expanding_apply, raw=False)
     )
     res.equals(res_parallel)
+
+def test_dataframe_axis_0_no_reduction(
+    pandarallel_init, func_dataframe_apply_axis_0_no_reduce, df_size
+):
+    df = pd.DataFrame(
+        dict(a=np.random.randint(1, 10, df_size), b=np.random.randint(1, 10, df_size), c=np.random.randint(1, 10, df_size))
+    )
+    res = df.apply(func_dataframe_apply_axis_0_no_reduce)
+
+    res_parallel = df.parallel_apply(func_dataframe_apply_axis_0_no_reduce)
+
+    assert res.equals(res_parallel)
+
+def test_dataframe_axis_1_no_reduction(
+    pandarallel_init, func_dataframe_apply_axis_1_no_reduce, df_size
+):
+    df = pd.DataFrame(
+        dict(a=np.random.randint(1, 10, df_size), b=np.random.randint(1, 10, df_size), c=np.random.randint(1, 10, df_size))
+    )
+
+    res = df.apply(func_dataframe_apply_axis_1_no_reduce, axis=1)
+
+    res_parallel = df.parallel_apply(func_dataframe_apply_axis_1_no_reduce, axis=1)
+
+    assert res.equals(res_parallel)
+

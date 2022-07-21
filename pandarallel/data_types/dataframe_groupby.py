@@ -40,7 +40,7 @@ class DataFrameGroupBy:
             return [compute_result(key, df) for key, df in data]
 
         @staticmethod
-        def get_reduce_extra(data: PandasDataFrameGroupBy) -> Dict[str, Any]:
+        def get_reduce_extra(data: PandasDataFrameGroupBy, user_defined_function_kwargs) -> Dict[str, Any]:
             return {"df_groupby": data}
 
         @staticmethod
