@@ -87,6 +87,18 @@ def get_pandas_version() -> Tuple[int, int]:
     return int(major_str), int(minor_str)
 
 
+def _get_axis_int(user_defined_function_kwargs):
+    axis = user_defined_function_kwargs.get("axis", 0)
+
+    if axis not in {0, 1, "index", "columns"}:
+        raise ValueError(f"No axis named {axis} for object type DataFrame")
+
+    axis_int = {0: 0, 1: 1, "index": 0, "columns": 1}[axis]
+    return axis_int
+
+def _opposite_axis_int(axis: int):
+    return 1 - axis
+
 class WorkerStatus(int, Enum):
     Running = 0
     Success = 1

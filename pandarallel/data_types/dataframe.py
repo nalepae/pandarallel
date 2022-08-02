@@ -4,6 +4,7 @@ import pandas as pd
 
 from ..utils import chunk
 from .generic import DataType
+from ..utils import _get_axis_int, _opposite_axis_int
 
 
 class DataFrame:
@@ -13,13 +14,9 @@ class DataFrame:
             nb_workers: int, data: pd.DataFrame, **kwargs
         ) -> Iterator[pd.DataFrame]:
             user_defined_function_kwargs = kwargs["user_defined_function_kwargs"]
-            axis = user_defined_function_kwargs.get("axis", 0)
 
-            if axis not in {0, 1, "index", "columns"}:
-                raise ValueError(f"No axis named {axis} for object type DataFrame")
-
-            axis_int = {0: 0, 1: 1, "index": 0, "columns": 1}[axis]
-            opposite_axis_int = 1 - axis_int
+            axis_int = _get_axis_int(user_defined_function_kwargs)
+            opposite_axis_int = _opposite_axis_int(axis_int)
 
             for chunk_ in chunk(data.shape[opposite_axis_int], nb_workers):
                 yield data.iloc[chunk_] if axis_int == 1 else data.iloc[:, chunk_]
@@ -39,10 +36,18 @@ class DataFrame:
             )
 
         @staticmethod
+        def get_reduce_extra(data: Any, user_defined_function_kwargs) -> Dict[str, Any]:
+            return {"axis": _get_axis_int(user_defined_function_kwargs)}
+
+        @staticmethod
         def reduce(
             datas: Iterable[pd.DataFrame], extra: Dict[str, Any]
         ) -> pd.DataFrame:
-            return pd.concat(datas, copy=False)
+            if isinstance(datas[0], pd.Series):
+                axis = 0
+            else:
+                axis = _opposite_axis_int(extra["axis"])
+            return pd.concat(datas, copy=False, axis=axis)
 
     class ApplyMap(DataType):
         @staticmethod

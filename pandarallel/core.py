@@ -235,7 +235,7 @@ def parallelize_with_memory_file_system(
         progresses_length = [len(chunk_) * multiplicator_factor for chunk_ in chunks]
 
         work_extra = data_type.get_work_extra(data)
-        reduce_extra = data_type.get_reduce_extra(data)
+        reduce_extra = data_type.get_reduce_extra(data, user_defined_function_kwargs)
 
         show_progress_bars = progress_bars_type != ProgressBarsType.No
 
@@ -376,7 +376,7 @@ def parallelize_with_pipe(
         progresses_length = [len(chunk_) * multiplicator_factor for chunk_ in chunks]
 
         work_extra = data_type.get_work_extra(data)
-        reduce_extra = data_type.get_reduce_extra(data)
+        reduce_extra = data_type.get_reduce_extra(data, user_defined_function_kwargs)
 
         show_progress_bars = progress_bars_type != ProgressBarsType.No
 
