@@ -5,24 +5,6 @@ echo "-------------------"
 echo
 pip install -e .[dev] --quiet
 
-echo "Pandas 1.0.0"
-echo "------------"
-echo
-pip install pandas==1.0.0 --quiet
-pytest
-
-echo "Pandas 1.1.0"
-echo "------------"
-echo
-pip install pandas==1.1.0 --quiet
-pytest
-
-echo "Pandas 1.2.0"
-echo "------------"
-echo
-pip install pandas==1.2.0 --quiet
-pytest
-
 echo "Pandas 1.3.0"
 echo "------------"
 echo
