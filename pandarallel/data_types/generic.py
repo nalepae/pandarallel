@@ -24,7 +24,9 @@ class DataType(ABC):
         ...
 
     @staticmethod
-    def get_reduce_extra(data: Any, user_defined_function_kwargs) -> Dict[str, Any]:
+    def get_reduce_extra(
+        data: Any, user_defined_function_kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
         return dict()
 
     @staticmethod

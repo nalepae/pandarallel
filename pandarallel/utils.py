@@ -1,6 +1,6 @@
 import itertools
 from enum import Enum
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 from pandas import DataFrame, Index
@@ -87,17 +87,14 @@ def get_pandas_version() -> Tuple[int, int]:
     return int(major_str), int(minor_str)
 
 
-def _get_axis_int(user_defined_function_kwargs):
+def get_axis_int(user_defined_function_kwargs: Dict[str, Any]):
     axis = user_defined_function_kwargs.get("axis", 0)
 
     if axis not in {0, 1, "index", "columns"}:
         raise ValueError(f"No axis named {axis} for object type DataFrame")
 
-    axis_int = {0: 0, 1: 1, "index": 0, "columns": 1}[axis]
-    return axis_int
+    return {0: 0, 1: 1, "index": 0, "columns": 1}[axis]
 
-def _opposite_axis_int(axis: int):
-    return 1 - axis
 
 class WorkerStatus(int, Enum):
     Running = 0
