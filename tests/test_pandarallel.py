@@ -245,15 +245,15 @@ def test_dataframe_groupby_apply(
 
     res = df.groupby("a").apply(func_dataframe_groupby_apply)
     res_parallel = df.groupby("a").parallel_apply(func_dataframe_groupby_apply)
-    res.equals(res_parallel)
+    assert res.equals(res_parallel)
 
     res = df.groupby(["a"]).apply(func_dataframe_groupby_apply)
     res_parallel = df.groupby(["a"]).parallel_apply(func_dataframe_groupby_apply)
-    res.equals(res_parallel)
+    assert res.equals(res_parallel)
 
     res = df.groupby(["a", "b"]).apply(func_dataframe_groupby_apply)
     res_parallel = df.groupby(["a", "b"]).parallel_apply(func_dataframe_groupby_apply)
-    res.equals(res_parallel)
+    assert res.equals(res_parallel)
 
 
 def test_dataframe_groupby_apply_complex(
@@ -285,7 +285,7 @@ def test_dataframe_groupby_rolling_apply(
         .b.rolling(4)
         .parallel_apply(func_dataframe_groupby_rolling_apply, raw=False)
     )
-    res.equals(res_parallel)
+    assert res.equals(res_parallel)
 
 
 def test_dataframe_groupby_expanding_apply(
