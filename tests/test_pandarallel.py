@@ -32,19 +32,19 @@ def func_dataframe_apply_axis_0(request):
 @pytest.fixture(params=("named", "anonymous"))
 def func_dataframe_apply_axis_1(request):
     def func(x):
-        return math.sin(x.a ** 2) + math.sin(x.b ** 2)
+        return math.sin(x.a**2) + math.sin(x.b**2)
 
     return dict(
-        named=func, anonymous=lambda x: math.sin(x.a ** 2) + math.sin(x.b ** 2)
+        named=func, anonymous=lambda x: math.sin(x.a**2) + math.sin(x.b**2)
     )[request.param]
 
 
 @pytest.fixture(params=("named", "anonymous"))
 def func_dataframe_applymap(request):
     def func(x):
-        return math.sin(x ** 2) - math.cos(x ** 2)
+        return math.sin(x**2) - math.cos(x**2)
 
-    return dict(named=func, anonymous=lambda x: math.sin(x ** 2) - math.cos(x ** 2))[
+    return dict(named=func, anonymous=lambda x: math.sin(x**2) - math.cos(x**2))[
         request.param
     ]
 
@@ -52,21 +52,21 @@ def func_dataframe_applymap(request):
 @pytest.fixture(params=("named", "anonymous"))
 def func_series_map(request):
     def func(x):
-        return math.log10(math.sqrt(math.exp(x ** 2)))
+        return math.log10(math.sqrt(math.exp(x**2)))
 
     return dict(
-        named=func, anonymous=lambda x: math.log10(math.sqrt(math.exp(x ** 2)))
+        named=func, anonymous=lambda x: math.log10(math.sqrt(math.exp(x**2)))
     )[request.param]
 
 
 @pytest.fixture(params=("named", "anonymous"))
 def func_series_apply(request):
     def func(x, power, bias=0):
-        return math.log10(math.sqrt(math.exp(x ** power))) + bias
+        return math.log10(math.sqrt(math.exp(x**power))) + bias
 
     return dict(
         named=func,
-        anonymous=lambda x, power, bias=0: math.log10(math.sqrt(math.exp(x ** power)))
+        anonymous=lambda x, power, bias=0: math.log10(math.sqrt(math.exp(x**power)))
         + bias,
     )[request.param]
 
@@ -90,7 +90,7 @@ def func_dataframe_groupby_apply():
     def func(df):
         dum = 0
         for item in df.b:
-            dum += math.log10(math.sqrt(math.exp(item ** 2)))
+            dum += math.log10(math.sqrt(math.exp(item**2)))
 
         return dum / len(df.b)
 
@@ -140,9 +140,7 @@ def func_dataframe_apply_axis_0_no_reduce(request):
     def func(x):
         return x
 
-    return dict(
-        named=func, anonymous=lambda x: x
-    )[request.param]
+    return dict(named=func, anonymous=lambda x: x)[request.param]
 
 
 @pytest.fixture(params=("named", "anonymous"))
@@ -150,9 +148,7 @@ def func_dataframe_apply_axis_1_no_reduce(request):
     def func(x):
         return x**2
 
-    return dict(
-        named=func, anonymous=lambda x: x**2
-    )[request.param]
+    return dict(named=func, anonymous=lambda x: x**2)[request.param]
 
 
 @pytest.fixture
@@ -311,11 +307,16 @@ def test_dataframe_groupby_expanding_apply(
     )
     res.equals(res_parallel)
 
+
 def test_dataframe_axis_0_no_reduction(
     pandarallel_init, func_dataframe_apply_axis_0_no_reduce, df_size
 ):
     df = pd.DataFrame(
-        dict(a=np.random.randint(1, 10, df_size), b=np.random.randint(1, 10, df_size), c=np.random.randint(1, 10, df_size))
+        dict(
+            a=np.random.randint(1, 10, df_size),
+            b=np.random.randint(1, 10, df_size),
+            c=np.random.randint(1, 10, df_size),
+        )
     )
     res = df.apply(func_dataframe_apply_axis_0_no_reduce)
 
@@ -323,11 +324,16 @@ def test_dataframe_axis_0_no_reduction(
 
     assert res.equals(res_parallel)
 
+
 def test_dataframe_axis_1_no_reduction(
     pandarallel_init, func_dataframe_apply_axis_1_no_reduce, df_size
 ):
     df = pd.DataFrame(
-        dict(a=np.random.randint(1, 10, df_size), b=np.random.randint(1, 10, df_size), c=np.random.randint(1, 10, df_size))
+        dict(
+            a=np.random.randint(1, 10, df_size),
+            b=np.random.randint(1, 10, df_size),
+            c=np.random.randint(1, 10, df_size),
+        )
     )
 
     res = df.apply(func_dataframe_apply_axis_1_no_reduce, axis=1)
@@ -335,4 +341,3 @@ def test_dataframe_axis_1_no_reduction(
     res_parallel = df.parallel_apply(func_dataframe_apply_axis_1_no_reduce, axis=1)
 
     assert res.equals(res_parallel)
-
