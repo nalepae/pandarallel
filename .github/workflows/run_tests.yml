@@ -46,3 +46,5 @@ jobs:
     - name: Test with pytest
       run: |
         pytest --cov=pandarallel
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
