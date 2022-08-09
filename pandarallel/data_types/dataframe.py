@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, Iterable, Iterator
+from types import GeneratorType
 
 import pandas as pd
 
@@ -44,6 +45,8 @@ class DataFrame:
         def reduce(
             datas: Iterable[pd.DataFrame], extra: Dict[str, Any]
         ) -> pd.DataFrame:
+            if isinstance(datas, GeneratorType):
+                datas = list(datas)
             axis = 0 if isinstance(datas[0], pd.Series) else 1 - extra["axis"]
             return pd.concat(datas, copy=False, axis=axis)
 
