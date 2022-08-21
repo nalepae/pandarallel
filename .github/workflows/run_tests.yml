@@ -15,14 +15,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macos-latest"]
-        # Remove Python 3.7.13 on 27 Jun 2023: https://endoflife.date/python
-        python-version: ["3.7.13", "3.8.13", "3.9.13", "3.10.5"]
+        # os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        os: ["windows-latest"]
+
+        # Remove Python 3.7.9 on 27 Jun 2023: https://endoflife.date/python
+
+        # Using Python 3.7.9 instead of 3.7.13 since 3.7.13 is not available for Windows
+        # on Github Actions
+
+        # Using Python 3.8.10 instead of 3.8.13 since 3.8.13 is not available for Windows
+        # on Github Actions        
+
+        python-version: ["3.7.9", "3.8.10", "3.9.13", "3.10.5"]
         pandas-version: ["1.0.5", "1.1.5", "1.2.5", "1.3.5", "1.4.3", ""]
 
         exclude:
           # Pandas 1.4.3 requires Python >= 3.8
-          - python-version: "3.7.13"
+          - python-version: "3.7.9"
             pandas-version: "1.4.3"
           # Pandas 1.0.5 has to be fully rebuilt with Python >= 3.9.13 (taking > 10 min)
           - python-version: "3.9.13"
