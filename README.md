@@ -18,7 +18,7 @@ CPUs by changing only one line of code. It also displays progress bars.
 ## Installation
 
 ```bash
-pip install pandarallel [--upgrade] [--user]`
+pip install pandarallel [--upgrade] [--user]
 ```
 
 ## Quickstart
