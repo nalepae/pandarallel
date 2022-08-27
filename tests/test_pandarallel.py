@@ -1,4 +1,3 @@
-from decimal import DivisionByZero
 import math
 
 import numpy as np
@@ -22,7 +21,7 @@ def use_memory_fs(request):
     return request.param
 
 
-@pytest.fixture(params=(RuntimeError, AttributeError, DivisionByZero))
+@pytest.fixture(params=(RuntimeError, AttributeError, ZeroDivisionError))
 def exception(request):
     return request.param
 
