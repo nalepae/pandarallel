@@ -1,3 +1,4 @@
+from decimal import DivisionByZero
 import math
 
 import numpy as np
@@ -18,6 +19,11 @@ def progress_bar(request):
 
 @pytest.fixture(params=(None, False))
 def use_memory_fs(request):
+    return request.param
+
+
+@pytest.fixture(params=(RuntimeError, AttributeError, DivisionByZero))
+def exception(request):
     return request.param
 
 
@@ -156,6 +162,16 @@ def pandarallel_init(progress_bar, use_memory_fs):
     pandarallel.initialize(
         progress_bar=progress_bar, use_memory_fs=use_memory_fs, nb_workers=2
     )
+
+
+def test_dataframe_apply_invalid_function(pandarallel_init, exception):
+    def f(_):
+        raise exception
+
+    df = pd.DataFrame(dict(a=[1, 2, 3, 4]))
+    
+    with pytest.raises(exception):
+        df.parallel_apply(f)
 
 
 def test_dataframe_apply_axis_0(pandarallel_init, func_dataframe_apply_axis_0, df_size):
