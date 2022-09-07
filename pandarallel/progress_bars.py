@@ -175,7 +175,7 @@ class ProgressBarsNotebookLab(ProgressBars):
         """Set a bar on error"""
         if not self.__show:
             return
-
+        if self.__single_bar: index = 0
         bar, _ = self.__bars[index].children
         bar.bar_style = "danger"
 
