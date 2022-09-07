@@ -183,7 +183,6 @@ class ProgressBarsNotebookLab(ProgressBars):
 def get_progress_bars(
     maxs: List[int], show, single_bar
 ) -> Union[ProgressBarsNotebookLab, ProgressBarsConsole]:
-    print(f"Single progress bar: {single_bar}")
     return (
         ProgressBarsNotebookLab(maxs, show, single_bar)
         if is_notebook_lab()
