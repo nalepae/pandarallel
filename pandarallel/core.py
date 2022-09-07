@@ -6,6 +6,7 @@ from multiprocessing.managers import SyncManager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Dict, Iterator, Optional, Tuple, Type, cast
+from functools import partial
 
 import dill
 import pandas as pd
@@ -205,6 +206,7 @@ def parallelize_with_memory_file_system(
     nb_requested_workers: int,
     data_type: Type[DataType],
     progress_bars_type: ProgressBarsType,
+    single_bar
 ):
     def closure(
         data: Any,
@@ -239,7 +241,7 @@ def parallelize_with_memory_file_system(
 
         show_progress_bars = progress_bars_type != ProgressBarsType.No
 
-        progress_bars = get_progress_bars(progresses_length, show_progress_bars)
+        progress_bars = get_progress_bars(progresses_length, show_progress_bars, single_bar)
         progresses = [0] * nb_workers
         workers_status = [WorkerStatus.Running] * nb_workers
 
@@ -344,6 +346,7 @@ def parallelize_with_pipe(
     nb_requested_workers: int,
     data_type: Type[DataType],
     progress_bars_type: ProgressBarsType,
+    single_bar
 ):
     def closure(
         data: Any,
@@ -380,7 +383,7 @@ def parallelize_with_pipe(
 
         show_progress_bars = progress_bars_type != ProgressBarsType.No
 
-        progress_bars = get_progress_bars(progresses_length, show_progress_bars)
+        progress_bars = get_progress_bars(progresses_length, show_progress_bars, single_bar)
         progresses = [0] * nb_workers
         workers_status = [WorkerStatus.Running] * nb_workers
 
@@ -444,6 +447,7 @@ class pandarallel:
         shm_size_mb=None,
         nb_workers=NB_PHYSICAL_CORES,
         progress_bar=False,
+        single_progress_bar=False,
         verbose=2,
         use_memory_fs: Optional[bool] = None,
     ) -> None:
@@ -459,6 +463,7 @@ class pandarallel:
             if use_memory_fs
             else parallelize_with_pipe
         )
+        parallelize = partial(parallelize, single_bar=single_progress_bar)
 
         if use_memory_fs and not is_memory_fs_available:
             raise SystemError("Memory file system is not available")
