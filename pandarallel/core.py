@@ -332,6 +332,11 @@ def parallelize_with_memory_file_system(
                 # saved at all. 
                 results_promise.get()
 
+                # If the above statement does not raise an exception, that
+                # means the multiprocessing went well and we want to re-raise
+                # the original EOFError.
+                raise
+
         finally:
             for output_file in output_files:
                 # When pandarallel stop supporting Python 3.7 and older, replace this
