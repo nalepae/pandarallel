@@ -101,14 +101,14 @@ For those given examples, parallel operations run approximately 4x faster than t
 According to [`pandas` documentation](https://pandas.pydata.org/):
 
 > `pandas` is a fast, powerful, flexible and easy to use open source data analysis and
-> manipulation tool,built on top of the Python programming language.
+> manipulation tool, built on top of the Python programming language.
 
-The main `pandas` drawback is the fact it uses only one core of your computer, even if
+The main drawback of `pandas` is the fact it uses only one core of your computer, even if
 multiple cores are available.
 
-`pandarallel` gets around this limitation by using all cores of your computer.
-But, in return, `pandarallel` need twice the memory that standard `pandas` operation
-would normally use.
+`pandarallel` gets around this limitation and can use all the cores of your computer.
+But, in return, `pandarallel` needs twice the memory that the same operation would 
+use with standard `pandas`.
 
 ==> `pandarallel` should **NOT** be used if your data cannot fit into memory with
 `pandas` itself. In such a case, `spark` (and its `python` layer `pyspark`)
