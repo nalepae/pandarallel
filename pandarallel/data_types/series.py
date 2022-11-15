@@ -13,7 +13,7 @@ class Series:
             nb_workers: int, data: pd.Series, **kwargs
         ) -> Iterator[pd.Series]:
             for chunk_ in chunk(data.size, nb_workers):
-                yield data[chunk_]
+                yield data.iloc[chunk_]
 
         @staticmethod
         def work(
@@ -39,7 +39,7 @@ class Series:
             nb_workers: int, data: pd.Series, **kwargs
         ) -> Iterator[pd.Series]:
             for chunk_ in chunk(data.size, nb_workers):
-                yield data[chunk_]
+                yield data.iloc[chunk_]
 
         @staticmethod
         def work(
