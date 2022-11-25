@@ -292,7 +292,7 @@ def parallelize_with_memory_file_system(
             ]
 
             pool = CONTEXT.Pool(nb_workers)
-            pool.starmap_async(wrapped_work_function, work_args_list)
+            results_promise = pool.starmap_async(wrapped_work_function, work_args_list)
 
             pool.close()
 
@@ -321,10 +321,21 @@ def parallelize_with_memory_file_system(
                     progress_bars.set_error(worker_index)
                     progress_bars.update(progresses)
 
-            return wrapped_reduce_function(
-                (Path(output_file.name) for output_file in output_files),
-                reduce_extra,
-            )
+            try:
+                return wrapped_reduce_function(
+                    (Path(output_file.name) for output_file in output_files),
+                    reduce_extra,
+                )
+            except EOFError:
+                # Loading the files failed, this most likely means that there
+                # was some error during processing and the files were never
+                # saved at all. 
+                results_promise.get()
+
+                # If the above statement does not raise an exception, that
+                # means the multiprocessing went well and we want to re-raise
+                # the original EOFError.
+                raise
 
         finally:
             for output_file in output_files:
