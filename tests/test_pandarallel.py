@@ -342,8 +342,32 @@ def test_dataframe_axis_1_no_reduction(
 
     assert res.equals(res_parallel)
 
-    
-def test_dataframe_resampler_apply_complex(
+
+def test_resampler_apply(
+    pandarallel_init, func_dataframe_groupby_apply, df_size
+):
+    df = pd.DataFrame(
+        dict(
+            b=np.random.rand(df_size),
+            c=np.random.rand(df_size),
+        ),
+        index=pd.to_datetime(np.arange(df_size), unit='m')
+    )
+
+    res = df.resample('h').apply(func_dataframe_groupby_apply)
+    res_parallel = df.resample('h').parallel_apply(func_dataframe_groupby_apply)
+    assert res.equals(res_parallel)
+
+    res = df.resample('h').apply(func_dataframe_groupby_apply)
+    res_parallel = df.resample('h').parallel_apply(func_dataframe_groupby_apply)
+    assert res.equals(res_parallel)
+
+    res = df.resample('h').apply(func_dataframe_groupby_apply)
+    res_parallel = df.resample('h').parallel_apply(func_dataframe_groupby_apply)
+    assert res.equals(res_parallel)
+
+
+def test_resampler_apply_complex(
     pandarallel_init, func_dataframe_groupby_apply_complex, df_size
 ):
     df = pd.DataFrame(
