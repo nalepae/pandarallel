@@ -5,3 +5,4 @@ from .rolling_groupby import RollingGroupBy
 from .generic import DataType
 from .series import Series
 from .series_rolling import SeriesRolling
+from .resampler import Resampler
