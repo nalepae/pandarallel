@@ -166,20 +166,20 @@ def func_dataframe_resampler_apply():
 
 
 @pytest.fixture()
-def func_dataframe_resampler_apply_series():
-    def func(df):
-        return df.iloc[0]
-
-    return func
-
-
-@pytest.fixture()
 def func_dataframe_resampler_apply_complex():
     def func(df):
         return pd.DataFrame(
             [[df.b.mean(), df.b.min(), df.b.max()]],
             columns=["b_mean", "b_min", "b_max"],
         )
+
+    return func
+
+
+@pytest.fixture()
+def func_dataframe_resampler_apply_series():
+    def func(df):
+        return df.iloc[0]
 
     return func
 
@@ -397,7 +397,24 @@ def test_dataframe_resampler_apply(
 
     res = df.resample("h").apply(func_dataframe_resampler_apply)
     res_parallel = df.resample("h").parallel_apply(func_dataframe_resampler_apply)
-    assert res.equals(res_parallel)
+    if pd.__version__ > (1, 0, 5):
+        assert res.equals(res_parallel)
+
+    
+def test_dataframe_resampler_apply_complex(
+    pandarallel_init, func_dataframe_resampler_apply_complex, df_size
+):
+    df = pd.DataFrame(
+        dict(b=np.random.rand(df_size)),
+        index=pd.to_datetime(np.arange(df_size), unit="m")
+    )
+
+    res = df.resample("h").apply(func_dataframe_resampler_apply_complex)
+
+    res_parallel = df.resample("h").parallel_apply(func_dataframe_resampler_apply_complex)
+
+    if pd.__version__ > (1, 0, 5):
+        assert res.equals(res_parallel)
 
 
 def test_dataframe_resampler_apply_series(
@@ -414,21 +431,6 @@ def test_dataframe_resampler_apply_series(
 
     res = df.resample("h").apply(func_dataframe_resampler_apply_series)
     res_parallel = df.resample("h").parallel_apply(func_dataframe_resampler_apply_series)
-    assert res.equals(res_parallel)
-
-
-def test_dataframe_resampler_apply_complex(
-    pandarallel_init, func_dataframe_resampler_apply_complex, df_size
-):
-    df = pd.DataFrame(
-        dict(b=np.random.rand(df_size)),
-        index=pd.to_datetime(np.arange(df_size), unit="m")
-    )
-
-    res = df.resample("h").apply(func_dataframe_resampler_apply_complex)
-
-    res_parallel = df.resample("h").parallel_apply(func_dataframe_resampler_apply_complex)
-
     assert res.equals(res_parallel)
 
 
