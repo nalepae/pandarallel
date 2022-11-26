@@ -49,8 +49,9 @@ class Resampler:
         @staticmethod
         def reduce(datas: Iterable[Tuple[Any, pd.DataFrame]], extra: Dict[str, Any]) -> pd.DataFrame:
             keys, values = zip(*[item for sublist in datas for item in sublist])
+            
             if isinstance(values[0], pd.DataFrame):
-                result = pd.concat(values, keys=keys)
+                result = pd.concat(values, keys=keys, copy=False)
             elif isinstance(values[0], pd.Series):
                 result = pd.DataFrame(values, index=keys)
             else:
