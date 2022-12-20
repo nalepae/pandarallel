@@ -13,7 +13,10 @@
 available CPUs.
 
 With a one line code change, it allows any Pandas user to take advandage of his
-multi-core computer, while `pandas` uses only one core.
+multi-core computer, while `pandas` uses only one core. 
+
+**Warning**
+please don't forget 'if __name__ == "__main__":' else wont execute and will idle
 
 `pandarallel` also offers nice progress bars (available on Notebook and terminal) to
 get an rough idea of the remaining amount of computation to be done.
