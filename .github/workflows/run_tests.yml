@@ -21,6 +21,9 @@ jobs:
         pandas-version: ["1.0.5", "1.1.5", "1.2.5", "1.3.5", "1.4.3", ""]
 
         exclude:
+          # see https://github.com/nalepae/pandarallel/pull/211#issuecomment-1362647674
+          - python-version: "3.8.10"
+            pandas-version: "1.0.5"
           # Pandas 1.4.3 requires Python >= 3.8
           - python-version: "3.7.9"
             pandas-version: "1.4.3"
