@@ -16,7 +16,7 @@ With a one line code change, it allows any Pandas user to take advandage of his
 multi-core computer, while `pandas` uses only one core.
 
 `pandarallel` also offers nice progress bars (available on Notebook and terminal) to
-get an rough idea of the remaining amount of computation to be done.
+get a rough idea of the remaining amount of computation to be done.
 
 | Without parallelization  | ![Without Pandarallel](https://github.com/nalepae/pandarallel/blob/master/docs/progress_apply.gif?raw=true)       |
 | :----------------------: | ----------------------------------------------------------------------------------------------------------------- |
