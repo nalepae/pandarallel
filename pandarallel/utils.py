@@ -1,6 +1,6 @@
 import itertools
 from enum import Enum
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 from pandas import DataFrame, Index
@@ -85,6 +85,15 @@ def df_indexed_like(df: DataFrame, axes: List[Index]) -> bool:
 def get_pandas_version() -> Tuple[int, int]:
     major_str, minor_str, *_ = pd.__version__.split(".")
     return int(major_str), int(minor_str)
+
+
+def get_axis_int(user_defined_function_kwargs: Dict[str, Any]):
+    axis = user_defined_function_kwargs.get("axis", 0)
+
+    if axis not in {0, 1, "index", "columns"}:
+        raise ValueError(f"No axis named {axis} for object type DataFrame")
+
+    return {0: 0, 1: 1, "index": 0, "columns": 1}[axis]
 
 
 class WorkerStatus(int, Enum):

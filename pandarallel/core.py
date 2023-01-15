@@ -238,7 +238,7 @@ def parallelize_with_memory_file_system(
         progresses_length = [len(chunk_) * multiplicator_factor for chunk_ in chunks]
 
         work_extra = data_type.get_work_extra(data)
-        reduce_extra = data_type.get_reduce_extra(data)
+        reduce_extra = data_type.get_reduce_extra(data, user_defined_function_kwargs)
 
         show_progress_bars = progress_bars_type != ProgressBarsType.No
 
@@ -295,7 +295,7 @@ def parallelize_with_memory_file_system(
             ]
 
             pool = CONTEXT.Pool(nb_workers)
-            pool.starmap_async(wrapped_work_function, work_args_list)
+            results_promise = pool.starmap_async(wrapped_work_function, work_args_list)
 
             pool.close()
 
@@ -327,10 +327,21 @@ def parallelize_with_memory_file_system(
             if any(w_s == WorkerStatus.Error for w_s in workers_status):
                 raise Exception("Exception during parallelization.")
 
-            return wrapped_reduce_function(
-                (Path(output_file.name) for output_file in output_files),
-                reduce_extra,
-            )
+            try:
+                return wrapped_reduce_function(
+                    (Path(output_file.name) for output_file in output_files),
+                    reduce_extra,
+                )
+            except EOFError:
+                # Loading the files failed, this most likely means that there
+                # was some error during processing and the files were never
+                # saved at all. 
+                results_promise.get()
+
+                # If the above statement does not raise an exception, that
+                # means the multiprocessing went well and we want to re-raise
+                # the original EOFError.
+                raise
 
         finally:
             for output_file in output_files:
@@ -382,7 +393,7 @@ def parallelize_with_pipe(
         progresses_length = [len(chunk_) * multiplicator_factor for chunk_ in chunks]
 
         work_extra = data_type.get_work_extra(data)
-        reduce_extra = data_type.get_reduce_extra(data)
+        reduce_extra = data_type.get_reduce_extra(data, user_defined_function_kwargs)
 
         show_progress_bars = progress_bars_type != ProgressBarsType.No
 
