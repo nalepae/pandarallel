@@ -13,7 +13,6 @@ import psutil
 from pandas.core.groupby import DataFrameGroupBy as PandaDataFrameGroupBy
 from pandas.core.window.expanding import ExpandingGroupby as PandasExpandingGroupby
 from pandas.core.window.rolling import RollingGroupby as PandasRollingGroupby
-from pandas.core.resample import Resampler as PandasResampler
 
 from .data_types import (
     DataFrame,
@@ -23,7 +22,6 @@ from .data_types import (
     RollingGroupBy,
     Series,
     SeriesRolling,
-    Resampler
 )
 from .progress_bars import ProgressBarsType, get_progress_bars, progress_wrapper
 from .utils import WorkerStatus
@@ -555,9 +553,4 @@ class pandarallel:
         # Series Rolling
         pd.core.window.Rolling.parallel_apply = parallelize(
             nb_workers, SeriesRolling.Apply, progress_bars_in_user_defined_function
-        )
-
-        # Resampler
-        PandasResampler.parallel_apply = parallelize(
-            nb_workers, Resampler.Apply, progress_bars_in_user_defined_function
         )

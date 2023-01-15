@@ -93,7 +93,6 @@ def func_series_rolling_apply(request):
 @pytest.fixture()
 def func_dataframe_groupby_apply():
     def func(df):
-        import math
         dum = 0
         for item in df.b:
             dum += math.log10(math.sqrt(math.exp(item**2)))
@@ -155,46 +154,6 @@ def func_dataframe_apply_axis_1_no_reduce(request):
         return x**2
 
     return dict(named=func, anonymous=lambda x: x**2)[request.param]
-
-
-@pytest.fixture()
-def func_dataframe_resampler_apply():
-    def func(df):
-        import math
-        dum = 0
-        for item in df.b:
-            dum += math.log10(math.sqrt(math.exp(item**2)))
-
-        return dum / len(df.b)
-
-    return func
-
-
-@pytest.fixture()
-def func_dataframe_resampler_apply_complex():
-    def func(df):
-        return pd.DataFrame(
-            [[df.b.mean(), df.b.min(), df.b.max()]],
-            columns=["b_mean", "b_min", "b_max"],
-        )
-
-    return func
-
-
-@pytest.fixture()
-def func_dataframe_resampler_apply_series():
-    def func(df):
-        return df.iloc[0]
-
-    return func
-
-
-@pytest.fixture()
-def func_series_resampler_apply():
-    def func(x):
-        return x.sum()
-
-    return func
 
 
 @pytest.fixture
@@ -396,70 +355,4 @@ def test_dataframe_axis_1_no_reduction(
 
     res_parallel = df.parallel_apply(func_dataframe_apply_axis_1_no_reduce, axis=1)
 
-    assert res.equals(res_parallel)
-
-    
-def test_dataframe_resampler_apply(
-    pandarallel_init, func_dataframe_resampler_apply, df_size
-):
-    df = pd.DataFrame(
-        dict(
-            b=np.random.rand(df_size),
-            c=np.random.rand(df_size),
-        ),
-        index=pd.to_datetime(np.arange(df_size), unit="m")
-    )
-
-    if pd.__version__ != "1.0.5":
-        res = df.resample("h").apply(func_dataframe_resampler_apply)
-        res_parallel = df.resample("h").parallel_apply(func_dataframe_resampler_apply)
-        assert res.equals(res_parallel)
-    else:
-        with pytest.raises(AttributeError):
-            res = df.resample("h").apply(func_dataframe_resampler_apply)
-
-    
-def test_dataframe_resampler_apply_complex(
-    pandarallel_init, func_dataframe_resampler_apply_complex, df_size
-):
-    df = pd.DataFrame(
-        dict(b=np.random.rand(df_size)),
-        index=pd.to_datetime(np.arange(df_size), unit="m")
-    )
-
-    if pd.__version__ != "1.0.5":
-        res = df.resample("h").apply(func_dataframe_resampler_apply_complex)
-        res_parallel = df.resample("h").parallel_apply(func_dataframe_resampler_apply_complex)
-        assert res.equals(res_parallel)
-    else:
-        with pytest.raises(AttributeError):
-            res = df.resample("h").apply(func_dataframe_resampler_apply_complex)
-
-
-def test_dataframe_resampler_apply_series(
-    pandarallel_init, func_dataframe_resampler_apply_series, df_size
-):
-    df = pd.DataFrame(
-        dict(
-            b=np.random.rand(df_size),
-            c=np.random.rand(df_size),
-        ),
-        index=pd.to_datetime(np.arange(df_size), unit="m")
-    )
-
-
-    res = df.resample("h").apply(func_dataframe_resampler_apply_series)
-    res_parallel = df.resample("h").parallel_apply(func_dataframe_resampler_apply_series)
-    assert res.equals(res_parallel)
-
-def test_series_resampler_apply(
-    pandarallel_init, func_series_resampler_apply, df_size
-):
-    df = pd.Series(
-        np.random.rand(df_size),
-        index=pd.to_datetime(np.arange(df_size), unit="m")
-    )
-
-    res = df.resample("h").apply(func_series_resampler_apply)
-    res_parallel = df.resample("h").parallel_apply(func_series_resampler_apply)
     assert res.equals(res_parallel)
