@@ -1,3 +1,4 @@
+import importlib
 import math
 
 import numpy as np
@@ -168,7 +169,7 @@ def test_dataframe_apply_invalid_function(pandarallel_init, exception):
         raise exception
 
     df = pd.DataFrame(dict(a=[1, 2, 3, 4]))
-    
+
     with pytest.raises(exception):
         df.parallel_apply(f)
 
@@ -356,3 +357,10 @@ def test_dataframe_axis_1_no_reduction(
     res_parallel = df.parallel_apply(func_dataframe_apply_axis_1_no_reduce, axis=1)
 
     assert res.equals(res_parallel)
+
+def test_memory_fs_root_environment_variable(monkeypatch):
+    monkeypatch.setenv("MEMORY_FS_ROOT", "/test")
+    from pandarallel import core
+    importlib.reload(core)
+
+    assert core.MEMORY_FS_ROOT == "/test"
