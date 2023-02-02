@@ -30,7 +30,7 @@ ON_WINDOWS = os.name == "nt"
 CONTEXT = multiprocessing.get_context("spawn" if ON_WINDOWS else "fork")
 
 # Root of Memory File System
-MEMORY_FS_ROOT = "/dev/shm"
+MEMORY_FS_ROOT = os.environ.get("MEMORY_FS_ROOT", "/dev/shm")
 
 # By default, Pandarallel use all available CPUs
 NB_PHYSICAL_CORES = psutil.cpu_count(logical=False)
@@ -329,7 +329,7 @@ def parallelize_with_memory_file_system(
             except EOFError:
                 # Loading the files failed, this most likely means that there
                 # was some error during processing and the files were never
-                # saved at all. 
+                # saved at all.
                 results_promise.get()
 
                 # If the above statement does not raise an exception, that
