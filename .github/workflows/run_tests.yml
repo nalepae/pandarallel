@@ -18,12 +18,15 @@ jobs:
         os: ["ubuntu-20.04", "macos-latest", "windows-latest"]
         # Remove Python 3.7.9 on 27 Jun 2023: https://endoflife.date/python
         python-version: ["3.7.9", "3.8.10", "3.9.13", "3.10.8"]
-        pandas-version: ["1.0.5", "1.1.5", "1.2.5", "1.3.5", "1.4.3", ""]
+        pandas-version: ["1.0.5", "1.1.5", "1.2.5", "1.3.5", "1.4.3", "2.0", ""]
 
         exclude:
           # see https://github.com/nalepae/pandarallel/pull/211#issuecomment-1362647674
           - python-version: "3.8.10"
             pandas-version: "1.0.5"
+          # Pandas 2.0 requires Python >= 3.8
+          - python-version: "3.7.9"
+            pandas-version: "2.0"
           # Pandas 1.4.3 requires Python >= 3.8
           - python-version: "3.7.9"
             pandas-version: "1.4.3"
