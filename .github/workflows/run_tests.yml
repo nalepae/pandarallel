@@ -24,6 +24,9 @@ jobs:
           # see https://github.com/nalepae/pandarallel/pull/211#issuecomment-1362647674
           - python-version: "3.8.10"
             pandas-version: "1.0.5"
+          # Pandas 2.0 requires Python >= 3.8
+          - python-version: "3.7.9"
+            pandas-version: "2.0"
           # Pandas 1.4.3 requires Python >= 3.8
           - python-version: "3.7.9"
             pandas-version: "1.4.3"
