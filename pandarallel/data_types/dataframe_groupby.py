@@ -77,7 +77,5 @@ class DataFrameGroupBy:
             mutated = cast(List[bool], mutated)
 
             args = get_args(keys, values, df_groupby)
-
-            return df_groupby._wrap_applied_output(
-                *args, not_indexed_same=df_groupby.mutated or mutated
-            )
+  
+            return df_groupby._wrap_applied_output(*args, not_indexed_same=mutated)
