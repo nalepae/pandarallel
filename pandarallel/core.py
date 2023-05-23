@@ -346,7 +346,7 @@ def parallelize_with_pipe(
     nb_requested_workers: int,
     data_type: Type[DataType],
     progress_bars_type: ProgressBarsType,
-    single_bar
+    single_bar: bool
 ):
     def closure(
         data: Any,
