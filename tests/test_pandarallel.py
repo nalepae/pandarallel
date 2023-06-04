@@ -12,7 +12,7 @@ def df_size(request):
     return request.param
 
 
-@pytest.fixture(params=(False, True))
+@pytest.fixture(params=(False, True, 1))
 def progress_bar(request):
     return request.param
 
@@ -357,6 +357,38 @@ def test_dataframe_axis_1_no_reduction(
     res_parallel = df.parallel_apply(func_dataframe_apply_axis_1_no_reduce, axis=1)
 
     assert res.equals(res_parallel)
+
+
+def test_limit_number_of_progress_bars(
+):
+    from pandarallel.progress_bars import get_progress_bars
+    progresses_length = [2, 3, 2]
+    show_progress_bars = True
+    max_progress_bars = 3
+    progress_bars = get_progress_bars(progresses_length, show_progress_bars, max_progress_bars)
+    __bars = getattr(progress_bars, f"_{progress_bars.__class__.__name__}__bars")
+    assert len(__bars) == 3
+    max_progress_bars = 4
+    progress_bars = get_progress_bars(progresses_length, show_progress_bars, max_progress_bars)
+    __bars = getattr(progress_bars, f"_{progress_bars.__class__.__name__}__bars")
+    assert len(__bars) == 3
+    max_progress_bars = 2
+    progress_bars = get_progress_bars(progresses_length, show_progress_bars, max_progress_bars)
+    __bars = getattr(progress_bars, f"_{progress_bars.__class__.__name__}__bars")
+    assert len(__bars) == 2
+    max_progress_bars = 1
+    progress_bars = get_progress_bars(progresses_length, show_progress_bars, max_progress_bars)
+    __bars = getattr(progress_bars, f"_{progress_bars.__class__.__name__}__bars")
+    assert len(__bars) == 1
+    max_progress_bars = -100
+    progress_bars = get_progress_bars(progresses_length, show_progress_bars, max_progress_bars)
+    __bars = getattr(progress_bars, f"_{progress_bars.__class__.__name__}__bars")
+    assert len(__bars) == 3
+    show_progress_bars = False
+    progress_bars = get_progress_bars(progresses_length * 2, show_progress_bars, max_progress_bars)
+    __bars = getattr(progress_bars, f"_{progress_bars.__class__.__name__}__bars")
+    assert len(__bars) == 6
+
 
 def test_memory_fs_root_environment_variable(monkeypatch):
     monkeypatch.setenv("MEMORY_FS_ROOT", "/test")
