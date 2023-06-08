@@ -359,34 +359,34 @@ def test_dataframe_axis_1_no_reduction(
     assert res.equals(res_parallel)
 
 
-def test_limit_number_of_progress_bars(
-):
+def test_limit_number_of_progress_bars():
     from pandarallel.progress_bars import get_progress_bars
     progresses_length = [2, 3, 2]
     show_progress_bars = True
     max_progress_bars = 3
     progress_bars = get_progress_bars(progresses_length, show_progress_bars, max_progress_bars)
-    __bars = getattr(progress_bars, f"_{progress_bars.__class__.__name__}__bars")
+    mangled_attr_name = f"_{progress_bars.__class__.__name__}__bars"
+    __bars = getattr(progress_bars, mangled_attr_name)
     assert len(__bars) == 3
     max_progress_bars = 4
     progress_bars = get_progress_bars(progresses_length, show_progress_bars, max_progress_bars)
-    __bars = getattr(progress_bars, f"_{progress_bars.__class__.__name__}__bars")
+    __bars = getattr(progress_bars, mangled_attr_name)
     assert len(__bars) == 3
     max_progress_bars = 2
     progress_bars = get_progress_bars(progresses_length, show_progress_bars, max_progress_bars)
-    __bars = getattr(progress_bars, f"_{progress_bars.__class__.__name__}__bars")
+    __bars = getattr(progress_bars, mangled_attr_name)
     assert len(__bars) == 2
     max_progress_bars = 1
     progress_bars = get_progress_bars(progresses_length, show_progress_bars, max_progress_bars)
-    __bars = getattr(progress_bars, f"_{progress_bars.__class__.__name__}__bars")
+    __bars = getattr(progress_bars, mangled_attr_name)
     assert len(__bars) == 1
     max_progress_bars = -100
     progress_bars = get_progress_bars(progresses_length, show_progress_bars, max_progress_bars)
-    __bars = getattr(progress_bars, f"_{progress_bars.__class__.__name__}__bars")
+    __bars = getattr(progress_bars, mangled_attr_name)
     assert len(__bars) == 3
     show_progress_bars = False
     progress_bars = get_progress_bars(progresses_length * 2, show_progress_bars, max_progress_bars)
-    __bars = getattr(progress_bars, f"_{progress_bars.__class__.__name__}__bars")
+    __bars = getattr(progress_bars, mangled_attr_name)
     assert len(__bars) == 6
 
 
