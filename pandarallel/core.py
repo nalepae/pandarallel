@@ -458,7 +458,7 @@ class pandarallel:
         shm_size_mb=None,
         nb_workers=NB_PHYSICAL_CORES,
         progress_bar=False,
-        single_progress_bar=False,
+        single_bar=False,
         verbose=2,
         use_memory_fs: Optional[bool] = None,
     ) -> None:
@@ -474,7 +474,7 @@ class pandarallel:
             if use_memory_fs
             else parallelize_with_pipe
         )
-        parallelize = partial(parallelize, single_bar=single_progress_bar)
+        parallelize = partial(parallelize, single_bar=single_bar)
 
         if use_memory_fs and not is_memory_fs_available:
             raise SystemError("Memory file system is not available")
