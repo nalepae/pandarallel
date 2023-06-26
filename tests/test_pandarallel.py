@@ -210,6 +210,20 @@ def test_dataframe_apply_invalid_axis(pandarallel_init):
 
     with pytest.raises(ValueError):
         df.parallel_apply(lambda x: x, axis="invalid")
+    
+def test_empty_dataframe_apply_axis_0(pandarallel_init, func_dataframe_apply_axis_0):
+    df = pd.DataFrame()
+
+    res = df.apply(func_dataframe_apply_axis_0)
+    res_parallel = df.parallel_apply(func_dataframe_apply_axis_0)
+    assert res.equals(res_parallel)
+
+def test_empty_dataframe_apply_axis_1(pandarallel_init, func_dataframe_apply_axis_1):
+    df = pd.DataFrame()
+
+    res = df.apply(func_dataframe_apply_axis_1)
+    res_parallel = df.parallel_apply(func_dataframe_apply_axis_1)
+    assert res.equals(res_parallel)
 
 
 def test_dataframe_applymap(pandarallel_init, func_dataframe_applymap, df_size):
@@ -233,6 +247,13 @@ def test_series_map(pandarallel_init, func_series_map, df_size):
 
 def test_series_apply(pandarallel_init, func_series_apply, df_size):
     df = pd.DataFrame(dict(a=np.random.rand(df_size) + 1))
+
+    res = df.a.apply(func_series_apply, args=(2,), bias=3)
+    res_parallel = df.a.parallel_apply(func_series_apply, args=(2,), bias=3)
+    assert res.equals(res_parallel)
+
+def test_empty_series_apply(pandarallel_init, func_series_apply):
+    df = pd.DataFrame(dict(a=[]))
 
     res = df.a.apply(func_series_apply, args=(2,), bias=3)
     res_parallel = df.a.parallel_apply(func_series_apply, args=(2,), bias=3)
