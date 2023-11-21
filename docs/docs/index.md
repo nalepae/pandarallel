@@ -29,7 +29,7 @@ get a rough idea of the remaining amount of computation to be done.
 | Without parallelization                                   | With parallelization                                               |
 | --------------------------------------------------------- | ------------------------------------------------------------------ |
 | `df.apply(func)`                                          | `df.parallel_apply(func)`                                          |
-| `df.applymap(func)`                                       | `df.parallel_applymap(func)`                                       |
+| `df.map(func)`                                            | `df.parallel_applymap(func)`                                       |
 | `df.groupby(args).apply(func)`                            | `df.groupby(args).parallel_apply(func)`                            |
 | `df.groupby(args1).col_name.rolling(args2).apply(func)`   | `df.groupby(args1).col_name.rolling(args2).parallel_apply(func)`   |
 | `df.groupby(args1).col_name.expanding(args2).apply(func)` | `df.groupby(args1).col_name.expanding(args2).parallel_apply(func)` |
