@@ -91,7 +91,7 @@ class ProgressBarsConsole(ProgressBars):
 
     def __update_line(self, done: int, total: int) -> str:
         if total == 0:
-            percent = 1
+            percent = 0
         else:
             percent = done / total
         bar = (":" * int(percent * 40)).ljust(40, " ")
@@ -165,10 +165,8 @@ class ProgressBarsNotebookLab(ProgressBars):
             if value >= bar.max:
                 bar.bar_style = "success"
 
-            if bar.max == 0:
-                bar.max = bar.value = 1
-
-            bar.description = "{:.2f}%".format(bar.value / bar.max * 100)
+            if bar.max != 0:
+                bar.description = "{:.2f}%".format(bar.value / bar.max * 100)
 
     def set_error(self, index: int) -> None:
         """Set a bar on error"""
