@@ -11,8 +11,14 @@
 **Pandaral.lel** provides a simple way to parallelize your pandas operations on all your
 CPUs by changing only one line of code. It also displays progress bars.
 
+## **⚠️ Pandaral·lel is looking for a maintainer! ⚠️**
+
+If you are interested, please contact me or open a GitHub issue.
+
 ## Maintainers
-- [Manu NALEPA](https://github.com/nalepae/)
+- [Manu NALEPA](https://github.com/nalepae)
+
+## Former maintainers (thanks a lot for your work!)
 - [till-m](https://github.com/till-m)
 
 ## Installation
