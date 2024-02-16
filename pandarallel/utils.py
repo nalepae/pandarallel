@@ -31,6 +31,9 @@ def chunk(nb_item: int, nb_chunks: int, start_offset=0) -> List[slice]:
     >>> chunks
     [slice(0, 26, None), slice(26, 52, None), slice(52, 78, None), slice(78, 103, None)]
     """
+    if nb_item == 0:
+        return [slice(0)]
+    
     if nb_item <= nb_chunks:
         return [slice(max(0, idx - start_offset), idx + 1) for idx in range(nb_item)]
 
