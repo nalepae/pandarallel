@@ -122,12 +122,13 @@ class ProgressBarsConsole(ProgressBars):
 
 
 class ProgressBarsNotebookLab(ProgressBars):
-    def __init__(self, maxs: List[int], show: bool) -> None:
+    def __init__(self, maxs: List[int], show: bool, leave: bool = True) -> None:
         """Initialization.
         Positional argument:
         maxs - List containing the max value of each progress bar
         """
         self.__show = show
+        self.__leave = leave
 
         if not show:
             return
@@ -164,6 +165,9 @@ class ProgressBarsNotebookLab(ProgressBars):
 
             if value >= bar.max:
                 bar.bar_style = "success"
+                if not self.__leave:
+                    bar.layout.display = 'none'
+                    label.layout.display = 'none'
 
             if bar.max != 0:
                 bar.description = "{:.2f}%".format(bar.value / bar.max * 100)
@@ -178,10 +182,10 @@ class ProgressBarsNotebookLab(ProgressBars):
 
 
 def get_progress_bars(
-    maxs: List[int], show
+    maxs: List[int], show, leave=True,
 ) -> Union[ProgressBarsNotebookLab, ProgressBarsConsole]:
     return (
-        ProgressBarsNotebookLab(maxs, show)
+        ProgressBarsNotebookLab(maxs, show, leave)
         if is_notebook_lab()
         else ProgressBarsConsole(maxs, show)
     )
