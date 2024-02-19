@@ -66,7 +66,7 @@ class DataFrame:
             user_defined_function_kwargs: Dict[str, Any],
             extra: Dict[str, Any],
         ) -> pd.DataFrame:
-            return data.applymap(user_defined_function)
+            return data.map(user_defined_function)
 
         @staticmethod
         def reduce(
