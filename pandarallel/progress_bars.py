@@ -55,9 +55,18 @@ def is_notebook_lab() -> bool:
 
 
 class ProgressBarsConsole(ProgressBars):
-    def __init__(self, maxs: List[int], show: bool) -> None:
+    def __init__(self, maxs: List[int], show: bool, count=-1) -> None:
         self.__show = show
-        self.__bars = [[0, max] for max in maxs]
+        num_workers = len(maxs)
+        self.bars_to_show = min(count, num_workers) if count > 0 else num_workers
+        self.map_worker_to_bar = {
+            index: (index % self.bars_to_show) for index in range(num_workers)
+        }
+        bar_maxs = (
+            sum(maxs[k] for k, v in self.map_worker_to_bar.items() if v == bar_index)
+            for bar_index in range(self.bars_to_show)
+        )
+        self.__bars = [[0, max] for max in bar_maxs]
         self.__width = self.__get_width()
 
         self.__lines = self.__update_lines()
@@ -111,7 +120,11 @@ class ProgressBarsConsole(ProgressBars):
         if not self.__show:
             return
 
-        for index, value in enumerate(values):
+        bar_values = [0] * self.bars_to_show
+        for worker_index, value in enumerate(values):
+            bar_values[self.map_worker_to_bar[worker_index]] += value
+
+        for index, value in enumerate(bar_values):
             self.__bars[index][0] = value
 
         self.__remove_displayed_lines()
@@ -122,7 +135,7 @@ class ProgressBarsConsole(ProgressBars):
 
 
 class ProgressBarsNotebookLab(ProgressBars):
-    def __init__(self, maxs: List[int], show: bool) -> None:
+    def __init__(self, maxs: List[int], show: bool, count=-1) -> None:
         """Initialization.
         Positional argument:
         maxs - List containing the max value of each progress bar
@@ -131,6 +144,16 @@ class ProgressBarsNotebookLab(ProgressBars):
 
         if not show:
             return
+
+        num_workers = len(maxs)
+        self.bars_to_show = min(count, num_workers) if count > 0 else num_workers
+        self.map_worker_to_bar = {
+            index: (index % self.bars_to_show) for index in range(num_workers)
+        }
+        bar_maxs = (
+            sum(maxs[k] for k, v in self.map_worker_to_bar.items() if v == bar_index)
+            for bar_index in range(self.bars_to_show)
+        )
 
         from IPython.display import display
         from ipywidgets import HBox, IntProgress, Label, VBox
@@ -142,7 +165,7 @@ class ProgressBarsNotebookLab(ProgressBars):
                     Label("{} / {}".format(0, max)),
                 ]
             )
-            for max in maxs
+            for max in bar_maxs
         ]
 
         display(VBox(self.__bars))
@@ -155,7 +178,11 @@ class ProgressBarsNotebookLab(ProgressBars):
         if not self.__show:
             return
 
-        for index, value in enumerate(values):
+        bar_values = [0] * self.bars_to_show
+        for worker_index, value in enumerate(values):
+            bar_values[self.map_worker_to_bar[worker_index]] += value
+
+        for index, value in enumerate(bar_values):
             bar, label = self.__bars[index].children
 
             label.value = "{} / {}".format(value, bar.max)
@@ -173,17 +200,17 @@ class ProgressBarsNotebookLab(ProgressBars):
         if not self.__show:
             return
 
-        bar, _ = self.__bars[index].children
+        bar, _ = self.__bars[self.map_worker_to_bar[index]].children
         bar.bar_style = "danger"
 
 
 def get_progress_bars(
-    maxs: List[int], show
+    maxs: List[int], show, count=-1
 ) -> Union[ProgressBarsNotebookLab, ProgressBarsConsole]:
     return (
-        ProgressBarsNotebookLab(maxs, show)
+        ProgressBarsNotebookLab(maxs, show, count)
         if is_notebook_lab()
-        else ProgressBarsConsole(maxs, show)
+        else ProgressBarsConsole(maxs, show, count)
     )
 
 
