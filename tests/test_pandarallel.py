@@ -22,6 +22,11 @@ def use_memory_fs(request):
     return request.param
 
 
+@pytest.fixture(params=(False, True))
+def single_bar(request):
+    return request.param
+
+
 @pytest.fixture(params=(RuntimeError, AttributeError, ZeroDivisionError))
 def exception(request):
     return request.param
@@ -158,9 +163,9 @@ def func_dataframe_apply_axis_1_no_reduce(request):
 
 
 @pytest.fixture
-def pandarallel_init(progress_bar, use_memory_fs):
+def pandarallel_init(progress_bar, single_bar, use_memory_fs):
     pandarallel.initialize(
-        progress_bar=progress_bar, use_memory_fs=use_memory_fs, nb_workers=2
+        progress_bar=progress_bar, single_bar=single_bar, use_memory_fs=use_memory_fs, nb_workers=2
     )
 
 
