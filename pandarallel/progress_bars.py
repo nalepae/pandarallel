@@ -55,8 +55,11 @@ def is_notebook_lab() -> bool:
 
 
 class ProgressBarsConsole(ProgressBars):
-    def __init__(self, maxs: List[int], show: bool) -> None:
+    def __init__(self, maxs: List[int], show: bool, single_bar=True) -> None:
         self.__show = show
+        self.__single_bar = single_bar
+        if self.__single_bar:
+            maxs = [sum(maxs)]
         self.__bars = [[0, max] for max in maxs]
         self.__width = self.__get_width()
 
@@ -111,6 +114,8 @@ class ProgressBarsConsole(ProgressBars):
         if not self.__show:
             return
 
+        if self.__single_bar:
+            values = [sum(values)]
         for index, value in enumerate(values):
             self.__bars[index][0] = value
 
@@ -122,7 +127,7 @@ class ProgressBarsConsole(ProgressBars):
 
 
 class ProgressBarsNotebookLab(ProgressBars):
-    def __init__(self, maxs: List[int], show: bool) -> None:
+    def __init__(self, maxs: List[int], show: bool, single_bar=True) -> None:
         """Initialization.
         Positional argument:
         maxs - List containing the max value of each progress bar
@@ -135,6 +140,9 @@ class ProgressBarsNotebookLab(ProgressBars):
         from IPython.display import display
         from ipywidgets import HBox, IntProgress, Label, VBox
 
+        self.__single_bar = single_bar
+        if self.__single_bar:
+            maxs = [sum(maxs)]
         self.__bars = [
             HBox(
                 [
@@ -154,7 +162,8 @@ class ProgressBarsNotebookLab(ProgressBars):
         """
         if not self.__show:
             return
-
+        if self.__single_bar:
+            values = [sum(values)]
         for index, value in enumerate(values):
             bar, label = self.__bars[index].children
 
@@ -172,18 +181,18 @@ class ProgressBarsNotebookLab(ProgressBars):
         """Set a bar on error"""
         if not self.__show:
             return
-
+        if self.__single_bar: index = 0
         bar, _ = self.__bars[index].children
         bar.bar_style = "danger"
 
 
 def get_progress_bars(
-    maxs: List[int], show
+    maxs: List[int], show, single_bar
 ) -> Union[ProgressBarsNotebookLab, ProgressBarsConsole]:
     return (
-        ProgressBarsNotebookLab(maxs, show)
+        ProgressBarsNotebookLab(maxs, show, single_bar)
         if is_notebook_lab()
-        else ProgressBarsConsole(maxs, show)
+        else ProgressBarsConsole(maxs, show, single_bar)
     )
 
 
