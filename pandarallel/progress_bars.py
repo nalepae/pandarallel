@@ -133,13 +133,17 @@ class ProgressBarsNotebookLab(ProgressBars):
             return
 
         from IPython.display import display
-        from ipywidgets import HBox, IntProgress, Label, VBox
+        from ipywidgets import HBox, IntProgress, Label, VBox, Textarea, Layout
 
         self.__bars = [
             HBox(
                 [
                     IntProgress(0, 0, max, description="{:.2f}%".format(0)),
                     Label("{} / {}".format(0, max)),
+                    Textarea(
+                        disabled=True,
+                        layout=Layout(width="800px", height="200px", display="None"),
+                    ),
                 ]
             )
             for max in maxs
@@ -156,7 +160,10 @@ class ProgressBarsNotebookLab(ProgressBars):
             return
 
         for index, value in enumerate(values):
-            bar, label = self.__bars[index].children
+            bar, label, _ = self.__bars[index].children
+
+            if bar.bar_style == "danger":
+                continue
 
             label.value = "{} / {}".format(value, bar.max)
             
@@ -168,13 +175,15 @@ class ProgressBarsNotebookLab(ProgressBars):
             if bar.max != 0:
                 bar.description = "{:.2f}%".format(bar.value / bar.max * 100)
 
-    def set_error(self, index: int) -> None:
+    def set_error(self, index: int, err_msg: str) -> None:
         """Set a bar on error"""
         if not self.__show:
             return
 
-        bar, _ = self.__bars[index].children
+        bar, _, txt_area = self.__bars[index].children
         bar.bar_style = "danger"
+        txt_area.value = err_msg
+        txt_area.layout.display = ""
 
 
 def get_progress_bars(
