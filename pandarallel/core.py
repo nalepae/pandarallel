@@ -6,6 +6,7 @@ from multiprocessing.managers import SyncManager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Dict, Iterator, Optional, Tuple, Type, cast
+import warnings
 
 import dill
 import pandas as pd
@@ -454,10 +455,13 @@ class pandarallel:
         cls,
         shm_size_mb=None,
         nb_workers=NB_PHYSICAL_CORES,
-        progress_bar=False,
-        verbose=2,
+        progress_bar: bool = False,
+        verbose: int = 2,
         use_memory_fs: Optional[bool] = None,
     ) -> None:
+        if shm_size_mb is not None:
+            warnings.warn("shm_size_mb not used by Pandarallel and will be removed in a future release.", warnings.DeprecationWarning)
+
         show_progress_bars = progress_bar
         is_memory_fs_available = Path(MEMORY_FS_ROOT).exists()
 
