@@ -453,11 +453,14 @@ class pandarallel:
     def initialize(
         cls,
         shm_size_mb=None,
-        nb_workers=NB_PHYSICAL_CORES,
+        nb_workers: Optional[int] = None,
         progress_bar=False,
         verbose=2,
         use_memory_fs: Optional[bool] = None,
     ) -> None:
+        if nb_workers is None:
+            nb_workers = NB_PHYSICAL_CORES
+
         show_progress_bars = progress_bar
         is_memory_fs_available = Path(MEMORY_FS_ROOT).exists()
 
