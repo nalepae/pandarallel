@@ -49,7 +49,14 @@ class WrapWorkFunctionForFileSystem:
     def __init__(
         self,
         work_function: Callable[
-            [Any, Callable, tuple, Dict[str, Any], Dict[str, Any]], Any
+            [
+                Any, 
+                Callable, 
+                tuple, 
+                Dict[str, Any], 
+                Dict[str, Any]
+            ], 
+            Any
         ],
     ) -> None:
         self.work_function = work_function
@@ -142,7 +149,8 @@ class WrapWorkFunctionForPipe:
             user_defined_function: Callable = dill.loads(dilled_user_defined_function)
 
             progress_wrapped_user_defined_function = progress_wrapper(
-                user_defined_function, master_workers_queue, worker_index, data_size
+                user_defined_function, master_workers_queue, worker_index, data_size,
+                extra.get('sleep_seconds', 0), extra.get('sleep_after_percent', 100.0)
             )
 
             used_user_defined_function = (
@@ -170,7 +178,6 @@ class WrapWorkFunctionForPipe:
         except:
             master_workers_queue.put((worker_index, WorkerStatus.Error, None))
             raise
-
 
 def wrap_reduce_function_for_file_system(
     reduce_function: Callable[[Iterator, Dict[str, Any]], Any]
@@ -217,7 +224,7 @@ def parallelize_with_memory_file_system(
 
         chunks = list(
             data_type.get_chunks(
-                nb_requested_workers,
+                max(1, nb_requested_workers),  # Ensure at least 1 worker
                 data,
                 user_defined_function_kwargs=user_defined_function_kwargs,
             )
@@ -327,14 +334,10 @@ def parallelize_with_memory_file_system(
                     reduce_extra,
                 )
             except EOFError:
+                results_promise.get()
                 # Loading the files failed, this most likely means that there
                 # was some error during processing and the files were never
                 # saved at all.
-                results_promise.get()
-
-                # If the above statement does not raise an exception, that
-                # means the multiprocessing went well and we want to re-raise
-                # the original EOFError.
                 raise
 
         finally:
@@ -355,6 +358,8 @@ def parallelize_with_pipe(
     nb_requested_workers: int,
     data_type: Type[DataType],
     progress_bars_type: ProgressBarsType,
+    sleep_seconds: int = 0,  # Add this parameter
+    sleep_after_percent: float = 100.0  # Add this parameter
 ):
     def closure(
         data: Any,
@@ -369,7 +374,7 @@ def parallelize_with_pipe(
 
         chunks = list(
             data_type.get_chunks(
-                nb_requested_workers,
+                max(1, nb_requested_workers),  # Ensure at least 1 worker
                 data,
                 user_defined_function_kwargs=user_defined_function_kwargs,
             )
@@ -410,6 +415,8 @@ def parallelize_with_pipe(
                         "master_workers_queue": master_workers_queue,
                         "show_progress_bars": show_progress_bars,
                         "worker_index": worker_index,
+                        "sleep_seconds": sleep_seconds,  # Add sleep_seconds to extra
+                        "sleep_after_percent": sleep_after_percent  # Add sleep_after_percent to extra
                     },
                 },
             )
@@ -447,7 +454,6 @@ def parallelize_with_pipe(
 
     return closure
 
-
 class pandarallel:
     @classmethod
     def initialize(
@@ -457,6 +463,8 @@ class pandarallel:
         progress_bar=False,
         verbose=2,
         use_memory_fs: Optional[bool] = None,
+        sleep_seconds: int = 0,
+        sleep_after_percent: float = 100.0,
     ) -> None:
         show_progress_bars = progress_bar
         is_memory_fs_available = Path(MEMORY_FS_ROOT).exists()
@@ -468,7 +476,7 @@ class pandarallel:
         parallelize = (
             parallelize_with_memory_file_system
             if use_memory_fs
-            else parallelize_with_pipe
+            else lambda *args, **kwargs: parallelize_with_pipe(*args, **kwargs, sleep_seconds=sleep_seconds, sleep_after_percent=sleep_after_percent)
         )
 
         if use_memory_fs and not is_memory_fs_available:
@@ -526,7 +534,7 @@ class pandarallel:
         pd.DataFrame.parallel_applymap = parallelize(
             nb_workers,
             DataFrame.ApplyMap,
-            progress_bars_in_user_defined_function_multiply_by_number_of_columns,
+            progress_bars_in_user_defined_function_multiply_by_number_of_columns
         )
 
         # DataFrame GroupBy
