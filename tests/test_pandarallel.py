@@ -6,6 +6,8 @@ import pandas as pd
 import pytest
 from pandarallel import pandarallel
 
+from packaging.version import Version
+
 
 @pytest.fixture(params=(1000, 1))
 def df_size(request):
@@ -53,6 +55,33 @@ def func_dataframe_applymap(request):
     return dict(named=func, anonymous=lambda x: math.sin(x**2) - math.cos(x**2))[
         request.param
     ]
+
+@pytest.fixture(params=("named", "anonymous"))
+def func_dataframe_map(request):
+    def func(x):
+        return math.sin(x**2) - math.cos(x**2)
+
+    return dict(named=func, anonymous=lambda x: math.sin(x**2) - math.cos(x**2))[
+        request.param
+    ]
+
+
+@pytest.fixture(params=("named", "anonymous"))
+def func_dataframe_agg_axis_0(request):
+    def func(x):
+        return max(x) - min(x)
+
+    return dict(named=func, anonymous=lambda x: max(x) - min(x))[request.param]
+
+
+@pytest.fixture(params=("named", "anonymous"))
+def func_dataframe_agg_axis_1(request):
+    def func(x):
+        return math.sin(x.a**2) + math.sin(x.b**2)
+
+    return dict(
+        named=func, anonymous=lambda x: math.sin(x.a**2) + math.sin(x.b**2)
+    )[request.param]
 
 
 @pytest.fixture(params=("named", "anonymous"))
@@ -204,6 +233,35 @@ def test_dataframe_apply_axis_1(pandarallel_init, func_dataframe_apply_axis_1, d
     res_parallel = df.parallel_apply(func_dataframe_apply_axis_1, axis=1)
     assert res.equals(res_parallel)
 
+def test_dataframe_agg_axis_0(pandarallel_init, func_dataframe_agg_axis_0, df_size):
+    df = pd.DataFrame(
+        dict(
+            a=np.random.randint(1, 8, df_size),
+            b=np.random.rand(df_size),
+            c=np.random.randint(1, 8, df_size),
+            d=np.random.rand(df_size),
+            e=np.random.randint(1, 8, df_size),
+            f=np.random.rand(df_size),
+            g=np.random.randint(1, 8, df_size),
+            h=np.random.rand(df_size),
+        )
+    )
+    df.index = [item / 10 for item in df.index]
+
+    res = df.agg(func_dataframe_agg_axis_0)
+    res_parallel = df.parallel_agg(func_dataframe_agg_axis_0)
+    assert res.equals(res_parallel)
+
+
+def test_dataframe_agg_axis_1(pandarallel_init, func_dataframe_agg_axis_1, df_size):
+    df = pd.DataFrame(
+        dict(a=np.random.randint(1, 8, df_size), b=np.random.rand(df_size))
+    )
+    df.index = [item / 10 for item in df.index]
+
+    res = df.agg(func_dataframe_agg_axis_1, axis=1)
+    res_parallel = df.parallel_agg(func_dataframe_agg_axis_1, axis=1)
+    assert res.equals(res_parallel)
 
 def test_dataframe_apply_invalid_axis(pandarallel_init):
     df = pd.DataFrame(dict(a=[1, 2, 3, 4]))
@@ -225,7 +283,7 @@ def test_empty_dataframe_apply_axis_1(pandarallel_init, func_dataframe_apply_axi
     res_parallel = df.parallel_apply(func_dataframe_apply_axis_1)
     assert res.equals(res_parallel)
 
-
+@pytest.mark.skipif(Version(pd.__version__) >= Version("2.1"), reason="applymap is deprecated for pandas >=2.1")
 def test_dataframe_applymap(pandarallel_init, func_dataframe_applymap, df_size):
     df = pd.DataFrame(
         dict(a=np.random.randint(1, 8, df_size), b=np.random.rand(df_size))
@@ -237,11 +295,38 @@ def test_dataframe_applymap(pandarallel_init, func_dataframe_applymap, df_size):
     assert res.equals(res_parallel)
 
 
+@pytest.mark.skipif(Version(pd.__version__) < Version("2.1"), reason="dataframe.map was introduced with pandas 2.1")
+def test_dataframe_map(pandarallel_init, func_dataframe_map, df_size):
+    df = pd.DataFrame(
+        dict(a=np.random.randint(1, 8, df_size), b=np.random.rand(df_size))
+    )
+    df.index = [item / 10 for item in df.index]
+
+    res = df.map(func_dataframe_map)
+    res_parallel = df.parallel_map(func_dataframe_map)
+    assert res.equals(res_parallel)
+
+
 def test_series_map(pandarallel_init, func_series_map, df_size):
     df = pd.DataFrame(dict(a=np.random.rand(df_size) + 1))
 
     res = df.a.map(func_series_map)
     res_parallel = df.a.parallel_map(func_series_map)
+    assert res.equals(res_parallel)
+
+
+def test_empty_dataframe_agg_axis_0(pandarallel_init, func_dataframe_agg_axis_0):
+    df = pd.DataFrame()
+
+    res = df.agg(func_dataframe_agg_axis_0)
+    res_parallel = df.parallel_agg(func_dataframe_agg_axis_0)
+    assert res.equals(res_parallel)
+
+def test_empty_dataframe_agg_axis_1(pandarallel_init, func_dataframe_agg_axis_1):
+    df = pd.DataFrame()
+
+    res = df.agg(func_dataframe_agg_axis_1)
+    res_parallel = df.parallel_agg(func_dataframe_agg_axis_1)
     assert res.equals(res_parallel)
 
 
