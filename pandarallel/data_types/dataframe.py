@@ -66,6 +66,12 @@ class DataFrame:
             user_defined_function_kwargs: Dict[str, Any],
             extra: Dict[str, Any],
         ) -> pd.DataFrame:
+            # pandas >= 2.1 deprecates DataFrame.applymap in favour of DataFrame.map (added in 2.1);
+            # older pandas only has applymap. Use whichever this pandas provides, so elementwise
+            # apply keeps working and no longer raises the FutureWarning reported in #258, without
+            # dropping support for pandas < 2.1.
+            if hasattr(data, "map"):
+                return data.map(user_defined_function)
             return data.applymap(user_defined_function)
 
         @staticmethod
