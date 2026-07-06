@@ -232,7 +232,9 @@ def test_dataframe_applymap(pandarallel_init, func_dataframe_applymap, df_size):
     )
     df.index = [item / 10 for item in df.index]
 
-    res = df.applymap(func_dataframe_applymap)
+    # pandas >= 2.1 renamed DataFrame.applymap to DataFrame.map; use whichever this pandas
+    # provides so the reference computation stays warning-free across versions.
+    res = (df.map if hasattr(df, "map") else df.applymap)(func_dataframe_applymap)
     res_parallel = df.parallel_applymap(func_dataframe_applymap)
     assert res.equals(res_parallel)
 
