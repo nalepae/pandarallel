@@ -93,12 +93,16 @@ def func_series_rolling_apply(request):
 
 @pytest.fixture()
 def func_dataframe_groupby_apply():
+    # Uses column `c`, which is never a grouping column in the tests below. Since pandas
+    # 3.0 the grouping columns are not passed to the applied function, so a function
+    # reading `df.b` would fail on the `groupby(["a", "b"])` case before `parallel_apply`
+    # is even reached.
     def func(df):
         dum = 0
-        for item in df.b:
+        for item in df.c:
             dum += math.log10(math.sqrt(math.exp(item**2)))
 
-        return dum / len(df.b)
+        return dum / len(df.c)
 
     return func
 

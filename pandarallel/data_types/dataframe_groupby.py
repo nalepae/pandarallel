@@ -17,8 +17,24 @@ class DataFrameGroupBy:
             chunks = chunk(dataframe_groupby.ngroups, nb_workers)
             iterator = iter(dataframe_groupby)
 
+            # Since pandas 3.0, `DataFrameGroupBy.apply` operates on
+            # `_obj_with_exclusions`, i.e. the grouping columns are no longer passed to
+            # the applied function. Iterating a `DataFrameGroupBy` still yields them
+            # though, so restrict each group to the columns `apply` would have used.
+            # On pandas < 3.0 the grouping columns are still passed, so keep them.
+            columns = (
+                dataframe_groupby._obj_with_exclusions.columns
+                if get_pandas_version() >= (3, 0)
+                else None
+            )
+
             for chunk_ in chunks:
-                yield [next(iterator) for _ in range(chunk_.stop - chunk_.start)]
+                groups = [next(iterator) for _ in range(chunk_.stop - chunk_.start)]
+
+                if columns is not None:
+                    groups = [(key, df[columns]) for key, df in groups]
+
+                yield groups
 
         @staticmethod
         def work(
