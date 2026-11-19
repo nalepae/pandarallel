@@ -3,7 +3,7 @@ from types import GeneratorType
 
 import pandas as pd
 
-from ..utils import chunk, get_axis_int
+from ..utils import chunk, concat_no_copy, get_axis_int
 from .generic import DataType
 
 
@@ -48,7 +48,7 @@ class DataFrame:
             if isinstance(datas, GeneratorType):
                 datas = list(datas)
             axis = 0 if isinstance(datas[0], pd.Series) else 1 - extra["axis"]
-            return pd.concat(datas, copy=False, axis=axis)
+            return concat_no_copy(datas, axis=axis)
 
     class ApplyMap(DataType):
         @staticmethod
@@ -66,10 +66,20 @@ class DataFrame:
             user_defined_function_kwargs: Dict[str, Any],
             extra: Dict[str, Any],
         ) -> pd.DataFrame:
-            return data.applymap(user_defined_function)
+            if hasattr(data, "map"):
+                return data.map(
+                    user_defined_function,
+                    *user_defined_function_args,
+                    **user_defined_function_kwargs,
+                )
+            return data.applymap(
+                user_defined_function,
+                *user_defined_function_args,
+                **user_defined_function_kwargs,
+            )
 
         @staticmethod
         def reduce(
             datas: Iterable[pd.DataFrame], extra: Dict[str, Any]
         ) -> pd.DataFrame:
-            return pd.concat(datas, copy=False)
+            return concat_no_copy(datas)

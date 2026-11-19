@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, Iterable, Iterator
 
 import pandas as pd
 
-from ..utils import chunk
+from ..utils import chunk, concat_no_copy
 from .generic import DataType
 
 
@@ -31,7 +31,7 @@ class Series:
 
         @staticmethod
         def reduce(datas: Iterable[pd.Series], extra: Dict[str, Any]) -> pd.Series:
-            return pd.concat(datas, copy=False)
+            return concat_no_copy(datas)
 
     class Map(DataType):
         @staticmethod
@@ -57,4 +57,4 @@ class Series:
 
         @staticmethod
         def reduce(datas: Iterable[pd.Series], extra: Dict[str, Any]) -> pd.Series:
-            return pd.concat(datas, copy=False)
+            return concat_no_copy(datas)

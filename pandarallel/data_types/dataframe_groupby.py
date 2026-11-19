@@ -15,7 +15,17 @@ class DataFrameGroupBy:
             nb_workers: int, dataframe_groupby: PandasDataFrameGroupBy, **kwargs
         ) -> Iterator[List[Tuple[int, pd.DataFrame]]]:
             chunks = chunk(dataframe_groupby.ngroups, nb_workers)
-            iterator = iter(dataframe_groupby)
+            user_kwargs = kwargs.get("user_defined_function_kwargs", {})
+            exclude_groups = (
+                get_pandas_version() >= (3, 0)
+                or user_kwargs.get("include_groups") is False
+            )
+            if exclude_groups and hasattr(dataframe_groupby, "_obj_with_exclusions"):
+                iterator = dataframe_groupby._grouper.get_iterator(
+                    dataframe_groupby._obj_with_exclusions
+                )
+            else:
+                iterator = iter(dataframe_groupby)
 
             for chunk_ in chunks:
                 yield [next(iterator) for _ in range(chunk_.stop - chunk_.start)]
@@ -28,11 +38,17 @@ class DataFrameGroupBy:
             user_defined_function_kwargs: Dict[str, Any],
             extra: Dict[str, Any],
         ) -> List[Tuple[int, pd.DataFrame, bool]]:
+            func_kwargs = {
+                k: v
+                for k, v in user_defined_function_kwargs.items()
+                if k != "include_groups"
+            }
+
             def compute_result(
                 key: int, df: pd.DataFrame
             ) -> Tuple[int, pd.DataFrame, bool]:
                 result = user_defined_function(
-                    df, *user_defined_function_args, **user_defined_function_kwargs
+                    df, *user_defined_function_args, **func_kwargs
                 )
                 mutated = not df_indexed_like(result, df.axes)
                 return key, result, mutated
