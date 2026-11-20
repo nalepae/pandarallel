@@ -2,9 +2,13 @@ import multiprocessing
 from typing import Any, Callable, Dict, Iterable, Iterator, List, Tuple
 
 import pandas as pd
-from pandas.core.window.rolling import RollingGroupby as PandasRollingGroupby
 
-from ..utils import WorkerStatus, chunk, get_pandas_version
+try:
+    from pandas.core.window.rolling import RollingGroupby as PandasRollingGroupby
+except ImportError:
+    from pandas.api.typing import RollingGroupBy as PandasRollingGroupby
+
+from ..utils import WorkerStatus, chunk, concat_no_copy, get_pandas_version
 from .generic import DataType
 
 
@@ -95,4 +99,4 @@ class RollingGroupBy:
 
         @staticmethod
         def reduce(datas: Iterable[pd.DataFrame], extra: Dict[str, Any]) -> pd.Series:
-            return pd.concat(datas, copy=False)
+            return concat_no_copy(datas)

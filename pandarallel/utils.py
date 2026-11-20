@@ -90,6 +90,12 @@ def get_pandas_version() -> Tuple[int, int]:
     return int(major_str), int(minor_str)
 
 
+def concat_no_copy(datas, **kwargs):
+    if get_pandas_version() < (3, 0):
+        kwargs.setdefault("copy", False)
+    return pd.concat(datas, **kwargs)
+
+
 def get_axis_int(user_defined_function_kwargs: Dict[str, Any]):
     axis = user_defined_function_kwargs.get("axis", 0)
 

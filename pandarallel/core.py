@@ -11,8 +11,18 @@ import dill
 import pandas as pd
 import psutil
 from pandas.core.groupby import DataFrameGroupBy as PandaDataFrameGroupBy
-from pandas.core.window.expanding import ExpandingGroupby as PandasExpandingGroupby
-from pandas.core.window.rolling import RollingGroupby as PandasRollingGroupby
+
+try:
+    from pandas.core.window.expanding import (
+        ExpandingGroupby as PandasExpandingGroupby,
+    )
+except ImportError:
+    from pandas.api.typing import ExpandingGroupBy as PandasExpandingGroupby
+
+try:
+    from pandas.core.window.rolling import RollingGroupby as PandasRollingGroupby
+except ImportError:
+    from pandas.api.typing import RollingGroupBy as PandasRollingGroupby
 
 from .data_types import (
     DataFrame,
@@ -523,11 +533,13 @@ class pandarallel:
         pd.DataFrame.parallel_apply = parallelize(
             nb_workers, DataFrame.Apply, progress_bars_in_user_defined_function
         )
-        pd.DataFrame.parallel_applymap = parallelize(
+        dataframe_parallel_map = parallelize(
             nb_workers,
             DataFrame.ApplyMap,
             progress_bars_in_user_defined_function_multiply_by_number_of_columns,
         )
+        pd.DataFrame.parallel_applymap = dataframe_parallel_map
+        pd.DataFrame.parallel_map = dataframe_parallel_map
 
         # DataFrame GroupBy
         PandaDataFrameGroupBy.parallel_apply = parallelize(
